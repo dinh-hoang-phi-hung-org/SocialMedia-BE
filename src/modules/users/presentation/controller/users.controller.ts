@@ -1,11 +1,50 @@
-import { Controller, Get } from '@nestjs/common';
-
+import { Controller, Get, Query, Param } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { GetUsersUseCase } from '@/modules/users/application/use-cases/get-users.use-case';
+import { SearchDto } from '@/shared/dtos/search-dto';
+import { SortDirection } from '@/shared/enum/sort-direction';
+import { GetUserByUuidUseCase } from '@/modules/users/application/use-cases/get-user-by-uuid.use-case';
+import { UserResponseDto } from '@/modules/users/presentation/dtos/user-response.dto';
+import { PaginatedResult } from '@/shared/types/paginated-result.interface';
+import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
+import { ApiSuccessResponse } from '@/shared/dtos/api-response.dto';
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor() {}
+  constructor(
+    private readonly userMapper: UserMapper,
+    private readonly getUsersUseCase: GetUsersUseCase,
+    private readonly getUserByUuidUseCase: GetUserByUuidUseCase,
+  ) {}
 
   @Get()
-  async getUsers() {
-    return 'Hello World';
+  @ApiOperation({ summary: 'Get all users with pagination and search' })
+  async getUsers(@Query() searchDto: SearchDto): Promise<ApiSuccessResponse<PaginatedResult<UserResponseDto>>> {
+    const {
+      searchFields,
+      searchValue,
+      page,
+      limit,
+      sortBy = 'createdAt',
+      sortDirection = SortDirection.DESC,
+    } = searchDto;
+    const searchFieldsArray = searchFields ? searchFields.split(',').map((field) => field.trim()) : [];
+    const result = await this.getUsersUseCase.execute({
+      searchFields: searchFieldsArray,
+      searchValue,
+      page,
+      limit,
+      sortBy,
+      sortDirection: sortDirection as SortDirection,
+    });
+
+    return new ApiSuccessResponse(this.userMapper.toPaginatedDTO(result));
+  }
+
+  @Get(':uuid')
+  @ApiOperation({ summary: 'Get user by UUID' })
+  async getUserByUuid(@Param('uuid') uuid: string): Promise<ApiSuccessResponse<UserResponseDto>> {
+    const user = await this.getUserByUuidUseCase.execute(uuid);
+    return new ApiSuccessResponse(this.userMapper.toDTO(user));
   }
 }

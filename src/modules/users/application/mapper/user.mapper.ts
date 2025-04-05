@@ -18,7 +18,6 @@ export class UserMapper {
       gender: user.gender,
       role: user.role,
       isActive: user.is_active,
-      isVerified: user.is_verified,
       createdAt: user.createdAt,
       lastLogin: user.last_login,
     };

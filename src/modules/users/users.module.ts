@@ -6,6 +6,8 @@ import { UserRepository } from './infrastructure/repositories/user.repository';
 import { UserOrmEntity } from './infrastructure/orm/users.entity.orm';
 import { GetUserByUuidUseCase } from './application/use-cases/get-user-by-uuid.use-case';
 import { UserMapper } from './application/mapper/user.mapper';
+import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
+
 @Module({
   imports: [TypeOrmModule.forFeature([UserOrmEntity])],
   controllers: [UsersController],
@@ -14,10 +16,12 @@ import { UserMapper } from './application/mapper/user.mapper';
     GetUsersUseCase,
     GetUserByUuidUseCase,
     UserRepository,
+    JwtAuthGuard,
     {
       provide: 'IUserRepository',
       useExisting: UserRepository,
     },
   ],
+  exports: [UserRepository, TypeOrmModule.forFeature([UserOrmEntity])],
 })
 export class UsersModule {}

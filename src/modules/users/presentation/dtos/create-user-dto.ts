@@ -1,18 +1,15 @@
 import { Gender } from '@/shared/enum/gender';
 import { UserRole } from '@/shared/enum/role';
 
-export class UserResponseDto {
-  uuid: string;
+export class CreateUserDto {
   username: string;
   email: string;
+  password: string;
   firstName: string;
   lastName: string;
   profilePictureUrl: string;
   bio: string;
   dateOfBirth: Date;
-  lastLogin: Date;
   gender: Gender;
   role: UserRole;
-  isActive: boolean;
-  createdAt: Date;
 }

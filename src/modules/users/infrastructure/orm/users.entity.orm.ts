@@ -14,10 +14,10 @@ export class UserOrmEntity extends BaseOrmEntity {
   @Column()
   password_hash: string;
 
-  @Column()
+  @Column({ nullable: true })
   first_name: string;
 
-  @Column()
+  @Column({ nullable: true })
   last_name: string;
 
   @Column({ nullable: true })
@@ -40,7 +40,4 @@ export class UserOrmEntity extends BaseOrmEntity {
 
   @Column({ default: true })
   is_active: boolean;
-
-  @Column({ default: false })
-  is_verified: boolean;
 }

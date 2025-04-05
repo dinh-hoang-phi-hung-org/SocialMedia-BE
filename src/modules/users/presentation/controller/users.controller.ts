@@ -1,5 +1,5 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Query, Param, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { GetUsersUseCase } from '@/modules/users/application/use-cases/get-users.use-case';
 import { SearchDto } from '@/shared/dtos/search-dto';
 import { SortDirection } from '@/shared/enum/sort-direction';
@@ -8,8 +8,14 @@ import { UserResponseDto } from '@/modules/users/presentation/dtos/user-response
 import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
 import { ApiSuccessResponse } from '@/shared/dtos/api-response.dto';
+import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
+import { RolesGuard } from '@/shared/guards/roles.guard';
+import { Roles } from '@/shared/decorators/roles.decorator';
+import { UserRole } from '@/shared/enum/role';
+
 @ApiTags('Users')
 @Controller('users')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(
     private readonly userMapper: UserMapper,
@@ -18,6 +24,8 @@ export class UsersController {
   ) {}
 
   @Get()
+  @ApiBearerAuth('access-token')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all users with pagination and search' })
   async getUsers(@Query() searchDto: SearchDto): Promise<ApiSuccessResponse<PaginatedResult<UserResponseDto>>> {
     const {

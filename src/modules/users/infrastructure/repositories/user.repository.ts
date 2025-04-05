@@ -75,6 +75,22 @@ export class UserRepository extends AbstractRepository<UserOrmEntity> implements
     return user;
   }
 
+  async findByEmail(email: string): Promise<UserOrmEntity | null> {
+    const user = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    return user;
+  }
+
+  async findByEmailOrUsername(email: string, username: string): Promise<UserOrmEntity | null> {
+    const user = await this.userRepository.findOne({
+      where: [{ email }, { username }],
+    });
+
+    return user;
+  }
+
   async findById(id: number): Promise<UserOrmEntity> {
     const user = await this.userRepository.findOne({
       where: { id },

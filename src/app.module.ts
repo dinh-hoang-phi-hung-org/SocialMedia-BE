@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users/users.module';
 import { DataSource } from 'typeorm';
 import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
     UsersModule,
     AuthModule,
+    RedisModule,
   ],
 })
 export class AppModule implements OnModuleInit {

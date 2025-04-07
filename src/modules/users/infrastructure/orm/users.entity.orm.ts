@@ -1,7 +1,8 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { BaseOrmEntity } from '@/shared/infrastructure/orm/base-orm.entity';
 import { UserRole } from '@/shared/enum/role';
 import { Gender } from '@/shared/enum/gender';
+import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.entity.orm';
 
 @Entity('users')
 export class UserOrmEntity extends BaseOrmEntity {
@@ -40,4 +41,18 @@ export class UserOrmEntity extends BaseOrmEntity {
 
   @Column({ default: true })
   is_active: boolean;
+
+  @Column({ default: 0 })
+  followers_count: number;
+
+  @Column({ default: 0 })
+  followings_count: number;
+
+  // Users that this user is following
+  @OneToMany(() => FollowOrmEntity, (follow) => follow.follower)
+  followings: FollowOrmEntity[];
+
+  // Users that are following this user
+  @OneToMany(() => FollowOrmEntity, (follow) => follow.following)
+  followers: FollowOrmEntity[];
 }

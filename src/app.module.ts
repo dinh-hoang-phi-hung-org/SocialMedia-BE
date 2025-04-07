@@ -7,6 +7,7 @@ import { DataSource } from 'typeorm';
 import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { FollowModule } from './modules/follow/follow.module';
 
 @Module({
   imports: [
@@ -24,13 +25,14 @@ import { RedisModule } from './modules/redis/redis.module';
       autoLoadEntities: true,
       synchronize: false,
       logging: true,
-      entities: [join(__dirname, '**', '*.entity.{ts,js}')],
+      entities: [join(__dirname, '**', '*.entity.orm.{ts,js}')],
       migrations: [join(__dirname, 'shared/infrastructure/database/migrations/*.{ts,js}')],
       migrationsTableName: 'migrations',
     }),
     UsersModule,
     AuthModule,
     RedisModule,
+    FollowModule,
   ],
 })
 export class AppModule implements OnModuleInit {

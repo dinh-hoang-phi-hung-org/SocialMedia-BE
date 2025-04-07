@@ -8,6 +8,7 @@ import { join } from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { FollowModule } from './modules/follow/follow.module';
+import { StorageModule } from './modules/storage/storage.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { FollowModule } from './modules/follow/follow.module';
     AuthModule,
     RedisModule,
     FollowModule,
+    StorageModule,
   ],
 })
 export class AppModule implements OnModuleInit {

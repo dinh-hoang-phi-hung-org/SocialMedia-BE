@@ -1,9 +1,10 @@
-import { Column, CreateDateColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, PrimaryGeneratedColumn, Index } from 'typeorm';
 
 export abstract class BaseOrmEntity {
   @PrimaryGeneratedColumn({ name: 'id', type: 'bigint' })
   id: number;
 
+  @Index()
   @Column({ name: 'uuid', type: 'uuid', generated: 'uuid' })
   uuid: string;
 

@@ -6,7 +6,7 @@ import { SearchOptions } from '@/shared/types/search-options';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, FindOptionsOrder, SortDirection } from 'typeorm';
 import { AbstractRepository } from '@/shared/repositories/abstract.repository';
-
+import { UserRole } from '@/shared/enum/role';
 @Injectable()
 export class UserRepository extends AbstractRepository<UserOrmEntity> implements IUserRepository {
   constructor(
@@ -26,7 +26,7 @@ export class UserRepository extends AbstractRepository<UserOrmEntity> implements
   async findAll(query: SearchOptions): Promise<PaginatedResult<UserOrmEntity>> {
     const { searchFields, searchValue, page, limit, sortBy, sortDirection } = query;
 
-    let where: FindOptionsWhere<UserOrmEntity>[] = [];
+    let where: FindOptionsWhere<UserOrmEntity>[] = [{ role: UserRole.USER }];
     if (searchFields && searchFields.length > 0) {
       if (!searchFields.includes('all')) {
         this.validateSearchFields(searchFields);
@@ -34,6 +34,7 @@ export class UserRepository extends AbstractRepository<UserOrmEntity> implements
       } else {
         where = this.buildWhereConditions(this.options.searchableFields, searchValue || '');
       }
+      where = where.map((w) => ({ ...w, role: UserRole.USER }));
     }
 
     let orderBy: FindOptionsOrder<UserOrmEntity>;

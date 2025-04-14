@@ -24,6 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     console.log('JWT Strategy initialized with secret:', this.configService.get('JWT_SECRET'));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async validate(request: any, payload: JwtPayload) {
     if (!payload.role || !Object.values(UserRole).includes(payload.role)) {
       throw new UnauthorizedException('Invalid role in token');

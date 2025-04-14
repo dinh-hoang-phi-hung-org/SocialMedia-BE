@@ -3,6 +3,7 @@ import { BaseOrmEntity } from '@/shared/infrastructure/orm/base-orm.entity';
 import { UserRole } from '@/shared/enum/role';
 import { Gender } from '@/shared/enum/gender';
 import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.entity.orm';
+import { PostOrmEntity } from '@/modules/posts/infrastructure/orm/posts.entity.orm';
 
 @Entity('users')
 export class UserOrmEntity extends BaseOrmEntity {
@@ -48,6 +49,9 @@ export class UserOrmEntity extends BaseOrmEntity {
   @Column({ default: 0 })
   followings_count: number;
 
+  @Column({ default: 0 })
+  posts_count: number;
+
   // Users that this user is following
   @OneToMany(() => FollowOrmEntity, (follow) => follow.follower)
   followings: FollowOrmEntity[];
@@ -55,4 +59,7 @@ export class UserOrmEntity extends BaseOrmEntity {
   // Users that are following this user
   @OneToMany(() => FollowOrmEntity, (follow) => follow.following)
   followers: FollowOrmEntity[];
+
+  @OneToMany(() => PostOrmEntity, (post) => post.user)
+  posts: PostOrmEntity[];
 }

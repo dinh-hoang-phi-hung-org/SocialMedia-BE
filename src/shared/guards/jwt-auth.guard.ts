@@ -45,6 +45,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private extractTokenFromHeader(request: any): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;

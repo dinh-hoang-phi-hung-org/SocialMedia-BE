@@ -78,6 +78,7 @@ export class StorageController {
     },
   })
   @UseInterceptors(FileInterceptor('file'))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async testUpload(@UploadedFile() file: any) {
     try {
       const fileUrl = await this.storageService.uploadFile(file, 'test');

@@ -8,6 +8,7 @@ export class RedisService implements OnModuleInit {
   private isConnected: boolean = false;
 
   constructor(private readonly configService: ConfigService) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const redisConfig: any = {
       host: this.configService.get('REDIS_HOST'),
       port: this.configService.get('REDIS_PORT'),
@@ -87,7 +88,7 @@ export class RedisService implements OnModuleInit {
       const result = await this.redisClient.get(key);
 
       if (!result) {
-        console.log(`Token not found in blacklist: ${key}`);
+        // console.log(`Token not found in blacklist: ${key}`);
         return false;
       }
 

@@ -1,4 +1,5 @@
 import { UserResponseDto } from '@/modules/users/presentation/dtos/user-response.dto';
+import { ShortcutUserResponseDto } from '@/modules/users/presentation/dtos/shortcut-user-response.dto';
 import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.orm';
 import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 import { Injectable } from '@nestjs/common';
@@ -20,6 +21,14 @@ export class UserMapper {
       isActive: user.is_active,
       createdAt: user.createdAt,
       lastLogin: user.last_login,
+    };
+  }
+
+  toShortcutDTO(user: UserOrmEntity): ShortcutUserResponseDto {
+    return {
+      uuid: user.uuid,
+      username: user.username,
+      profilePictureUrl: user.profile_picture_url,
     };
   }
 

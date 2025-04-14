@@ -40,6 +40,7 @@ export abstract class AbstractRepository<T extends ObjectLiteral> {
 
   public applySearchParams(
     queryBuilder: SelectQueryBuilder<T>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     searchParams: Record<string, any>,
   ): SelectQueryBuilder<T> {
     for (const [key, value] of Object.entries(searchParams)) {
@@ -51,6 +52,7 @@ export abstract class AbstractRepository<T extends ObjectLiteral> {
     return queryBuilder;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public applySortParams(queryBuilder: SelectQueryBuilder<T>, sortParams: Record<string, any>): SelectQueryBuilder<T> {
     Object.entries(sortParams).forEach(([key, direction]) => {
       const snakeCaseKey = this.camelToSnakeCase(key);

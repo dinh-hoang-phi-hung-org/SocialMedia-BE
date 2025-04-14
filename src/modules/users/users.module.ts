@@ -22,6 +22,6 @@ import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
       useExisting: UserRepository,
     },
   ],
-  exports: [UserRepository, TypeOrmModule.forFeature([UserOrmEntity])],
+  exports: [UserRepository, TypeOrmModule.forFeature([UserOrmEntity]), 'IUserRepository'],
 })
 export class UsersModule {}

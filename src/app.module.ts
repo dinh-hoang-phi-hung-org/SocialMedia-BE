@@ -9,6 +9,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RedisModule } from './modules/redis/redis.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { PostsModule } from './modules/posts/posts.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { StorageModule } from './modules/storage/storage.module';
     AuthModule,
     RedisModule,
     FollowModule,
+    PostsModule,
     StorageModule,
   ],
 })

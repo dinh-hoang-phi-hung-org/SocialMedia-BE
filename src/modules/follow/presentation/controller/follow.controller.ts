@@ -16,6 +16,8 @@ import { GetFollowersListUseCase } from '@/modules/follow/application/use-cases/
 import { UnfollowUserUseCase } from '@/modules/follow/application/use-cases/unfollow-user.use-case';
 import { GetFollowingsListUseCase } from '@/modules/follow/application/use-cases/get-followings-list.use-case';
 import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
+import { AdjustUserFollowerCountUseCase } from '@/modules/follow/application/use-cases/adjust-user-follower-count.use-case';
+import { AdjustUserFollowingCountUseCase } from '@/modules/follow/application/use-cases/adjust-user-following-count.use-case';
 
 @ApiTags('Follow')
 @Controller('follow')
@@ -27,6 +29,8 @@ export class FollowController {
     private readonly getFollowersListUseCase: GetFollowersListUseCase,
     private readonly getFollowingsListUseCase: GetFollowingsListUseCase,
     private readonly userMapper: UserMapper,
+    private readonly adjustUserFollowingCountUseCase: AdjustUserFollowingCountUseCase,
+    private readonly adjustUserFollowerCountUseCase: AdjustUserFollowerCountUseCase,
   ) {}
 
   @Post()
@@ -39,6 +43,8 @@ export class FollowController {
   ): Promise<ApiSuccessResponse<{ message: string }>> {
     const { followingUuid } = body;
     await this.followUserUseCase.execute(currentUser.uuid, followingUuid);
+    await this.adjustUserFollowingCountUseCase.execute(currentUser.uuid, true);
+    await this.adjustUserFollowerCountUseCase.execute(followingUuid, true);
     return new ApiSuccessResponse({
       message: 'User followed successfully',
     });
@@ -54,6 +60,8 @@ export class FollowController {
   ): Promise<ApiSuccessResponse<{ message: string }>> {
     const { followingUuid } = body;
     await this.unfollowUserUseCase.execute(currentUser.uuid, followingUuid);
+    await this.adjustUserFollowingCountUseCase.execute(currentUser.uuid, false);
+    await this.adjustUserFollowerCountUseCase.execute(followingUuid, false);
     return new ApiSuccessResponse({
       message: 'User unfollowed successfully',
     });

@@ -10,8 +10,11 @@ import { UserRepository } from '@/modules/users/infrastructure/repositories/user
 import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.orm';
 import { GetFollowingsListUseCase } from '@/modules/follow/application/use-cases/get-followings-list.use-case';
 import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
+import { AdjustUserFollowerCountUseCase } from '@/modules/follow/application/use-cases/adjust-user-follower-count.use-case';
+import { AdjustUserFollowingCountUseCase } from '@/modules/follow/application/use-cases/adjust-user-following-count.use-case';
+import { UsersModule } from '@/modules/users/users.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([FollowOrmEntity, UserOrmEntity])],
+  imports: [TypeOrmModule.forFeature([FollowOrmEntity, UserOrmEntity]), UsersModule],
   controllers: [FollowController],
   providers: [
     FollowUserUseCase,
@@ -21,6 +24,8 @@ import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
     UserRepository,
     GetFollowingsListUseCase,
     UserMapper,
+    AdjustUserFollowerCountUseCase,
+    AdjustUserFollowingCountUseCase,
   ],
 })
 export class FollowModule {}

@@ -19,7 +19,7 @@ export class GenerateVerificationTokenUseCase {
 
     return this.jwtService.signAsync(payload, {
       secret: this.configService.get('JWT_SECRET'),
-      expiresIn: '24h',
+      expiresIn: '1h',
     });
   }
 }

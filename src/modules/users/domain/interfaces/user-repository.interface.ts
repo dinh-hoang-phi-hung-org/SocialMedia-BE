@@ -3,5 +3,5 @@ import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.o
 
 export interface IUserRepository extends IBaseRepository<UserOrmEntity> {
   findByEmail(email: string): Promise<UserOrmEntity | null>;
-  findByEmailOrUsername(email: string, username: string): Promise<UserOrmEntity | null>;
+  findByUsername(email: string): Promise<UserOrmEntity | null>;
 }

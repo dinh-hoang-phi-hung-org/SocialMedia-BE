@@ -5,7 +5,6 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserRole } from '@/shared/enum/role';
 import { MailService } from '@/modules/mail/mail.service';
 import { GenerateVerificationTokenUseCase } from './generate-verification-token.use-case';
-import { ApiSuccessResponse } from '@/shared/dtos/api-response.dto';
 import { hashPassword } from '@/shared/helpers/bcrypt';
 
 @Injectable()
@@ -16,11 +15,15 @@ export class SignupUseCase {
     private readonly generateVerificationTokenUseCase: GenerateVerificationTokenUseCase,
   ) {}
 
-  async execute(signupDto: SignupDto): Promise<ApiSuccessResponse<{ message: string }>> {
-    const existingUser = await this.userRepository.findByEmailOrUsername(signupDto.email, signupDto.username);
+  async execute(signupDto: SignupDto): Promise<{ message: string }> {
+    const existingEmail = await this.userRepository.findByEmail(signupDto.email);
+    if (existingEmail) {
+      throw new BadRequestException('common:auth.email-already-exists');
+    }
 
-    if (existingUser) {
-      throw new BadRequestException('User already exists');
+    const existingUsername = await this.userRepository.findByUsername(signupDto.username);
+    if (existingUsername) {
+      throw new BadRequestException('common:auth.username-already-exists');
     }
 
     const hashedPassword = await hashPassword(signupDto.password);
@@ -39,8 +42,8 @@ export class SignupUseCase {
 
     await this.mailService.sendUserConfirmation(createdUser, verificationToken);
 
-    return new ApiSuccessResponse({
-      message: 'User registered successfully. Please check your email to verify your account.',
-    });
+    return {
+      message: 'common:message.register-success',
+    };
   }
 }

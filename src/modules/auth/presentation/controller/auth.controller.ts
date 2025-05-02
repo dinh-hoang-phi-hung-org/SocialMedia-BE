@@ -1,5 +1,5 @@
 import { LoginDto } from '@/modules/auth/presentation/dtos/login.dto';
-import { Controller, Post, Body, BadRequestException, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, BadRequestException, Query, UseGuards } from '@nestjs/common';
 import { LoginUseCase } from '@/modules/auth/application/use-cases/login.use-case';
 import { SignupDto } from '@/modules/auth/presentation/dtos/signup.dto';
 import { SignupUseCase } from '@/modules/auth/application/use-cases/signup.use-case';
@@ -9,7 +9,7 @@ import { LogoutUseCase } from '@/modules/auth/application/use-cases/logout.use-c
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { GetUser } from '@/shared/decorators/get-user.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-
+import { LoginResponseDto } from '@/modules/auth/presentation/dtos/login-response.dto';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -22,20 +22,24 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login user' })
-  async login(@Body() body: LoginDto) {
-    return this.loginUseCase.execute(body);
+  async login(@Body() body: LoginDto): Promise<ApiSuccessResponse<LoginResponseDto>> {
+    try {
+      return new ApiSuccessResponse(await this.loginUseCase.execute(body));
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   @Post('signup')
   @ApiOperation({ summary: 'Register new user' })
-  async signup(@Body() body: SignupDto) {
+  async signup(@Body() body: SignupDto): Promise<ApiSuccessResponse<{ message: string }>> {
     if (body.password !== body.confirmPassword) {
       throw new BadRequestException('Password and confirm password do not match');
     }
-    return this.signupUseCase.execute(body);
+    return new ApiSuccessResponse(await this.signupUseCase.execute(body));
   }
 
-  @Get('confirm')
+  @Post('confirm')
   @ApiOperation({ summary: 'Confirm email address' })
   async confirmEmail(@Query('token') token: string): Promise<ApiSuccessResponse<{ message: string }>> {
     await this.verifyEmailUseCase.execute(token);

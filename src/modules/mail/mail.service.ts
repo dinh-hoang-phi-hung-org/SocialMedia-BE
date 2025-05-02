@@ -12,7 +12,7 @@ export class MailService {
 
   async sendUserConfirmation(user: UserOrmEntity, token: string): Promise<void> {
     const frontendUrl = this.configService.get('FRONTEND_URL');
-    const confirmationUrl = `${frontendUrl}/auth/confirm?token=${token}&uuid=${user.uuid}`;
+    const confirmationUrl = `${frontendUrl}/auth/confirm?token=${token}`;
 
     await this.mailerService.sendMail({
       to: user.email,
@@ -31,7 +31,7 @@ export class MailService {
             </a>
           </p>
           <p>If you did not request this email you can safely ignore it.</p>
-          <p>The link will expire in 24 hours.</p>
+          <p>The link will expire in 1 hour.</p>
           <p>Best regards,<br>The Social Media Team</p>
         </div>
       `,

@@ -11,7 +11,7 @@ export interface TokenDataParams {
 export interface TokenDataResult {
   accessToken: string;
   refreshToken: string;
-  tokenExpries: number;
+  tokenExpires: number;
 }
 
 export const GetTokenHelper = async (
@@ -30,7 +30,7 @@ export const GetTokenHelper = async (
     throw new Error('JWT_REFRESH_EXPIRATION_MS is not defined');
   }
 
-  const tokenExpries = Date.now() + parseInt(tokenExpiresIn);
+  const tokenExpires = Date.now() + parseInt(tokenExpiresIn);
 
   const [accessToken, refreshToken] = await Promise.all([
     jwtService.signAsync(
@@ -58,6 +58,6 @@ export const GetTokenHelper = async (
   return {
     accessToken,
     refreshToken,
-    tokenExpries,
+    tokenExpires,
   };
 };

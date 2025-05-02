@@ -6,7 +6,6 @@ import { ConfigService } from '@nestjs/config';
 import { GetTokenHelper } from '@/modules/auth/presentation/helper/get-token-data.helper';
 import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.orm';
 import { LoginResponseDto } from '@/modules/auth/presentation/dtos/login-response.dto';
-import { ApiSuccessResponse } from '@/shared/dtos/api-response.dto';
 import { comparePassword } from '@/shared/helpers/bcrypt';
 
 @Injectable()
@@ -17,18 +16,18 @@ export class LoginUseCase {
     private readonly configService: ConfigService,
   ) {}
 
-  async execute(loginDto: LoginDto): Promise<ApiSuccessResponse<LoginResponseDto>> {
+  async execute(loginDto: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userRepository.findByEmail(loginDto.email);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('common:auth.invalid-credentials');
     } else if (!user.is_active) {
-      throw new UnauthorizedException('User is not active');
+      throw new UnauthorizedException('common:auth.user-not-verified');
     }
 
     const isPasswordValid = await comparePassword(loginDto.password, user.password_hash);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('common:auth.invalid-credentials');
     }
 
     user.last_login = new Date();
@@ -36,7 +35,7 @@ export class LoginUseCase {
 
     const tokenResponse = await this.generateTokenResponse(user);
 
-    return new ApiSuccessResponse(tokenResponse);
+    return tokenResponse;
   }
 
   private async generateTokenResponse(user: UserOrmEntity) {
@@ -53,7 +52,7 @@ export class LoginUseCase {
     return {
       accessToken: tokenData.accessToken,
       refreshToken: tokenData.refreshToken,
-      tokenExpries: tokenData.tokenExpries,
+      tokenExpires: tokenData.tokenExpires,
     };
   }
 }

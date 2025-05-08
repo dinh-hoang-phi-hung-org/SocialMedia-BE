@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UserRole } from '@/shared/enum/role';
+import { GetUser } from '@/shared/decorators/get-user.decorator';
 
 @ApiTags('Users')
 @Controller('users')
@@ -50,9 +51,14 @@ export class UsersController {
   }
 
   @Get(':uuid')
+  @ApiBearerAuth('access-token')
+  @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Get user by UUID' })
-  async getUserByUuid(@Param('uuid') uuid: string): Promise<ApiSuccessResponse<UserResponseDto>> {
-    const user = await this.getUserByUuidUseCase.execute(uuid);
-    return new ApiSuccessResponse(this.userMapper.toDTO(user));
+  async getUserByUuid(
+    @Param('uuid') uuid: string,
+    @GetUser() currentUser: { uuid: string },
+  ): Promise<ApiSuccessResponse<UserResponseDto>> {
+    const user = await this.getUserByUuidUseCase.execute(uuid, currentUser.uuid);
+    return new ApiSuccessResponse(this.userMapper.toDTO(user, user.isFollowed));
   }
 }

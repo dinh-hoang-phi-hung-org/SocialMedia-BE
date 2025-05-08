@@ -6,7 +6,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class UserMapper {
-  toDTO(user: UserOrmEntity): UserResponseDto {
+  toDTO(user: UserOrmEntity, isFollowed?: boolean): UserResponseDto {
     return {
       uuid: user.uuid,
       username: user.username,
@@ -21,6 +21,10 @@ export class UserMapper {
       isActive: user.is_active,
       createdAt: user.createdAt,
       lastLogin: user.last_login,
+      followersCount: user.followers_count,
+      followingsCount: user.followings_count,
+      postsCount: user.posts_count,
+      isFollowed: isFollowed,
     };
   }
 
@@ -34,7 +38,7 @@ export class UserMapper {
 
   toPaginatedDTO(paginatedResult: PaginatedResult<UserOrmEntity>): PaginatedResult<UserResponseDto> {
     return {
-      data: paginatedResult.data.map(this.toDTO),
+      data: paginatedResult.data.map((user) => this.toDTO(user)),
       meta: {
         total: paginatedResult.meta.total,
         page: paginatedResult.meta.page,

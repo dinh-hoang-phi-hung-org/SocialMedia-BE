@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FollowController } from './presentation/controller/follow.controller';
 import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.entity.orm';
@@ -14,7 +14,7 @@ import { AdjustUserFollowerCountUseCase } from '@/modules/follow/application/use
 import { AdjustUserFollowingCountUseCase } from '@/modules/follow/application/use-cases/adjust-user-following-count.use-case';
 import { UsersModule } from '@/modules/users/users.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([FollowOrmEntity, UserOrmEntity]), UsersModule],
+  imports: [TypeOrmModule.forFeature([FollowOrmEntity, UserOrmEntity]), forwardRef(() => UsersModule)],
   controllers: [FollowController],
   providers: [
     FollowUserUseCase,
@@ -26,6 +26,11 @@ import { UsersModule } from '@/modules/users/users.module';
     UserMapper,
     AdjustUserFollowerCountUseCase,
     AdjustUserFollowingCountUseCase,
+    {
+      provide: 'IFollowRepository',
+      useExisting: FollowRepository,
+    },
   ],
+  exports: [FollowRepository, TypeOrmModule.forFeature([FollowOrmEntity]), 'IFollowRepository'],
 })
 export class FollowModule {}

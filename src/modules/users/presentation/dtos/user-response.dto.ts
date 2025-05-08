@@ -15,4 +15,8 @@ export class UserResponseDto {
   role: UserRole;
   isActive: boolean;
   createdAt: Date;
+  followersCount: number;
+  followingsCount: number;
+  postsCount: number;
+  isFollowed?: boolean;
 }

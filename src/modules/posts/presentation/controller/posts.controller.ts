@@ -34,6 +34,8 @@ import { PostResponseDto } from '../dtos/post-reponse.dto';
 import { PostMapper } from '@/modules/posts/application/mapper/post.mapper';
 import { GetPostByUuidUseCase } from '@/modules/posts/application/use-cases/get-post-by-uuid.use-case';
 import { AdjustUserPostsCountUseCase } from '@/modules/posts/application/use-cases/adjust-user-posts-count.use-case';
+import { UserRole } from '@/shared/enum/role';
+import { Roles } from '@/shared/decorators/roles.decorator';
 @ApiTags('Posts')
 @Controller('posts')
 export class PostsController {
@@ -54,6 +56,7 @@ export class PostsController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
+  @Roles(UserRole.USER)
   @ApiOperation({ summary: 'Create a new post with optional media upload (max 10 images and 3 videos)' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({

@@ -4,6 +4,8 @@ import { UserRole } from '@/shared/enum/role';
 import { Gender } from '@/shared/enum/gender';
 import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.entity.orm';
 import { PostOrmEntity } from '@/modules/posts/infrastructure/orm/posts.entity.orm';
+import { UserConversation } from '@/modules/message/infrastructure/orm/user-conversation.entity.orm';
+import { MessageOrmEntity } from '@/modules/message/infrastructure/orm/message.entity.orm';
 
 @Entity('users')
 export class UserOrmEntity extends BaseOrmEntity {
@@ -62,4 +64,10 @@ export class UserOrmEntity extends BaseOrmEntity {
 
   @OneToMany(() => PostOrmEntity, (post) => post.user)
   posts: PostOrmEntity[];
+
+  @OneToMany(() => UserConversation, (uc) => uc.user)
+  userConversations: UserConversation[];
+
+  @OneToMany(() => MessageOrmEntity, (message) => message.sender)
+  messages: MessageOrmEntity[];
 }

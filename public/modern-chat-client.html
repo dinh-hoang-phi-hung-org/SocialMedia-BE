@@ -1,0 +1,1241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern Chat Client</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Roboto', sans-serif;
+      }
+
+      body {
+        background-color: #f0f2f5;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .app-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+
+      .header {
+        background-color: #4f46e5;
+        color: white;
+        padding: 16px 20px;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .header h1 {
+        font-size: 1.8rem;
+        font-weight: 500;
+      }
+
+      .connection-status {
+        padding: 6px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+      }
+
+      .connected {
+        background-color: #10b981;
+      }
+
+      .disconnected {
+        background-color: #ef4444;
+      }
+
+      .auth-section {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+
+      .auth-header {
+        font-size: 1.2rem;
+        font-weight: 500;
+        margin-bottom: 16px;
+        color: #4f46e5;
+      }
+
+      .input-group {
+        margin-bottom: 12px;
+      }
+
+      .input-group label {
+        display: block;
+        margin-bottom: 6px;
+        color: #4b5563;
+        font-weight: 500;
+      }
+
+      .input-field {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+      }
+
+      .input-field:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+      }
+
+      .btn {
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .btn:hover {
+        background-color: #4338ca;
+      }
+
+      .btn-secondary {
+        background-color: #6b7280;
+      }
+
+      .btn-secondary:hover {
+        background-color: #4b5563;
+      }
+
+      .main-section {
+        display: flex;
+        flex-grow: 1;
+        gap: 20px;
+      }
+
+      .conversation-section {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .conversation-header {
+        padding: 16px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 1.1rem;
+        font-weight: 500;
+      }
+
+      .messages-container {
+        flex-grow: 1;
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .message {
+        max-width: 75%;
+        padding: 12px 16px;
+        border-radius: 18px;
+        font-size: 14px;
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
+      .message-time {
+        font-size: 11px;
+        margin-top: 4px;
+        opacity: 0.6;
+      }
+
+      .sent {
+        align-self: flex-end;
+        background-color: #4f46e5;
+        color: white;
+        border-bottom-right-radius: 4px;
+      }
+
+      .received {
+        align-self: flex-start;
+        background-color: #f3f4f6;
+        color: #1f2937;
+        border-bottom-left-radius: 4px;
+      }
+
+      .info {
+        align-self: center;
+        background-color: #f3f4f6;
+        color: #6b7280;
+        font-style: italic;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 12px;
+      }
+
+      .message-form {
+        padding: 12px 16px;
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        border-top: 1px solid #e5e7eb;
+      }
+
+      .message-input {
+        flex-grow: 1;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 24px;
+        font-size: 14px;
+      }
+
+      .message-input:focus {
+        outline: none;
+        border-color: #4f46e5;
+      }
+
+      .send-button {
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      .send-button:hover {
+        background-color: #4338ca;
+      }
+
+      .side-panel {
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        width: 300px;
+        padding: 16px;
+      }
+
+      .panel-section {
+        margin-bottom: 24px;
+      }
+
+      .panel-header {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 12px;
+        color: #4f46e5;
+      }
+
+      .user-info {
+        background-color: #f9fafb;
+        padding: 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #4f46e5;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 500;
+      }
+
+      .user-details {
+        flex-grow: 1;
+      }
+
+      .user-name {
+        font-weight: 500;
+        margin-bottom: 2px;
+      }
+
+      .user-id {
+        font-size: 12px;
+        color: #6b7280;
+      }
+
+      .debug-log {
+        background-color: #f9fafb;
+        padding: 12px;
+        border-radius: 8px;
+        font-family: monospace;
+        height: 150px;
+        overflow-y: auto;
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
+      .log-entry {
+        margin-bottom: 6px;
+        border-left: 3px solid #4f46e5;
+        padding-left: 8px;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .main-section {
+          flex-direction: column;
+        }
+
+        .side-panel {
+          width: 100%;
+          order: -1;
+        }
+      }
+
+      /* Loading Animation */
+      .loader {
+        width: 20px;
+        height: 20px;
+        border: 3px solid #ffffff;
+        border-radius: 50%;
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+        margin-right: 8px;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .hidden {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="app-container">
+      <div class="header">
+        <h1>Modern Chat Client</h1>
+        <div class="connection-status disconnected" id="connection-status">Disconnected</div>
+      </div>
+
+      <div class="auth-section">
+        <h2 class="auth-header">Authentication</h2>
+        <div class="input-group">
+          <label for="jwt-token">JWT Token</label>
+          <input type="text" id="jwt-token" class="input-field" placeholder="Enter your JWT token" />
+        </div>
+        <div class="input-group">
+          <button id="authenticate-btn" class="btn">
+            <span id="auth-loader" class="loader hidden"></span>
+            <span id="auth-text">Authenticate</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="main-section">
+        <div class="conversation-section">
+          <div class="conversation-header">
+            <div class="input-group" style="display: flex; gap: 10px">
+              <input type="text" id="receiver-id" class="input-field" placeholder="Enter receiver UUID" />
+              <button id="get-conversation-btn" class="btn btn-secondary">Get Conversation</button>
+            </div>
+          </div>
+
+          <div class="messages-container" id="messages-container">
+            <div class="message info">Please authenticate and specify a receiver to start messaging</div>
+          </div>
+
+          <div class="message-form">
+            <input type="text" id="message-input" class="message-input" placeholder="Type a message..." disabled />
+            <input type="file" id="file-input" accept="image/*,video/*" multiple style="display: none" />
+            <button id="attach-btn" class="send-button" style="margin-right: 5px" disabled>
+              <i class="fas fa-paperclip"></i>
+            </button>
+            <div id="upload-status" style="display: none; margin-right: 5px; color: #4f46e5"></div>
+            <button id="send-message-btn" class="send-button" disabled>
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="side-panel">
+          <div class="panel-section">
+            <h3 class="panel-header">User Information</h3>
+            <div class="user-info">
+              <div class="user-avatar" id="user-avatar">?</div>
+              <div class="user-details">
+                <div class="user-name" id="user-name">Not authenticated</div>
+                <div class="user-id" id="user-id">--</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-section">
+            <h3 class="panel-header">Conversation Information</h3>
+            <div class="input-group">
+              <label for="conversation-id">Conversation ID</label>
+              <input type="text" id="conversation-id" class="input-field" readonly />
+            </div>
+            <div id="file-preview-container" style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px"></div>
+          </div>
+
+          <div class="panel-section">
+            <h3 class="panel-header">Debug Log</h3>
+            <div class="debug-log" id="debug-log"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        // DOM Elements
+        const connectionStatus = document.getElementById('connection-status');
+        const jwtToken = document.getElementById('jwt-token');
+        const authenticateBtn = document.getElementById('authenticate-btn');
+        const authLoader = document.getElementById('auth-loader');
+        const authText = document.getElementById('auth-text');
+        const receiverId = document.getElementById('receiver-id');
+        const getConversationBtn = document.getElementById('get-conversation-btn');
+        const conversationId = document.getElementById('conversation-id');
+        const messageInput = document.getElementById('message-input');
+        const sendMessageBtn = document.getElementById('send-message-btn');
+        const messagesContainer = document.getElementById('messages-container');
+        const userAvatar = document.getElementById('user-avatar');
+        const userName = document.getElementById('user-name');
+        const userId = document.getElementById('user-id');
+        const debugLog = document.getElementById('debug-log');
+        const fileInput = document.getElementById('file-input');
+        const attachBtn = document.getElementById('attach-btn');
+        const filePreviewContainer = document.getElementById('file-preview-container');
+        const uploadStatus = document.getElementById('upload-status');
+
+        // Selected files array
+        let selectedFiles = [];
+
+        // Initialize Socket.io
+        const socket = io('http://localhost:3001/chat', {
+          transports: ['websocket'],
+          autoConnect: false,
+        });
+
+        // User authentication state
+        let userInfo = null;
+        let currentConversation = null;
+
+        // Connect to the server when the page loads
+        socket.connect();
+
+        // Socket event listeners
+        socket.on('connect', () => {
+          connectionStatus.textContent = 'Connected';
+          connectionStatus.classList.remove('disconnected');
+          connectionStatus.classList.add('connected');
+          addMessage('Connected to server', 'info');
+          addDebugLog('Socket connected');
+
+          // Thử tự động xác thực nếu có token
+          const savedToken = localStorage.getItem('jwt_token');
+          if (savedToken) {
+            jwtToken.value = savedToken;
+            addDebugLog('Found saved token, attempting auto-authentication');
+            authenticateUser();
+          }
+        });
+
+        socket.on('disconnect', () => {
+          connectionStatus.textContent = 'Disconnected';
+          connectionStatus.classList.remove('connected');
+          connectionStatus.classList.add('disconnected');
+          addMessage('Disconnected from server', 'info');
+          addDebugLog('Socket disconnected');
+
+          // Disable UI on disconnect
+          messageInput.disabled = true;
+          sendMessageBtn.disabled = true;
+        });
+
+        socket.on('receiveMessage', (data) => {
+          // Check for media URL
+          if (data.mediaUrl) {
+            try {
+              // Kiểm tra nếu mediaUrl đã là object thì dùng trực tiếp, không cần parse
+              let mediaData = data.mediaUrl;
+
+              // Nếu là string thì parse thành object
+              if (typeof data.mediaUrl === 'string') {
+                mediaData = JSON.parse(data.mediaUrl);
+                addDebugLog(`Media parsed from string: ${JSON.stringify(mediaData)}`);
+              } else {
+                addDebugLog(`Media is already an object: ${JSON.stringify(mediaData)}`);
+              }
+
+              if (
+                (mediaData.images && mediaData.images.length > 0) ||
+                (mediaData.videos && mediaData.videos.length > 0)
+              ) {
+                addMessageWithMedia(data.content, 'received', data.senderId, mediaData);
+                addDebugLog(`Received message with media: ${JSON.stringify(data)}`);
+                return;
+              }
+            } catch (e) {
+              addDebugLog(`Error processing media data from socket: ${e.message}`);
+            }
+          }
+
+          // Regular message without media
+          addMessage(data.content, 'received', data.senderId);
+          addDebugLog(`Received message: ${JSON.stringify(data)}`);
+        });
+
+        socket.on('userTyping', (data) => {
+          const typingElement = document.getElementById(`typing-${data.userId}`);
+
+          if (data.isTyping) {
+            if (!typingElement) {
+              const element = document.createElement('div');
+              element.id = `typing-${data.userId}`;
+              element.classList.add('message', 'info');
+              element.textContent = `${data.userId} is typing...`;
+              messagesContainer.appendChild(element);
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+          } else {
+            if (typingElement) {
+              typingElement.remove();
+            }
+          }
+        });
+
+        // Button event listeners
+        authenticateBtn.addEventListener('click', authenticateUser);
+        getConversationBtn.addEventListener('click', getConversation);
+        sendMessageBtn.addEventListener('click', sendMessage);
+        attachBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+          selectedFiles = Array.from(e.target.files);
+          filePreviewContainer.innerHTML = '';
+
+          if (selectedFiles.length > 0) {
+            addDebugLog(`Selected ${selectedFiles.length} files`);
+            uploadStatus.textContent = `${selectedFiles.length} file(s) selected`;
+            uploadStatus.style.display = 'inline-block';
+          } else {
+            uploadStatus.style.display = 'none';
+          }
+
+          selectedFiles.forEach((file, index) => {
+            addDebugLog(`File ${index + 1}: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
+
+            if (file.type.startsWith('image/')) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.width = '50px';
+                img.style.height = '50px';
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '5px';
+                filePreviewContainer.appendChild(img);
+              };
+              reader.readAsDataURL(file);
+            } else if (file.type.startsWith('video/')) {
+              const div = document.createElement('div');
+              div.textContent = 'Video';
+              div.style.padding = '5px';
+              div.style.backgroundColor = '#f0f0f0';
+              div.style.borderRadius = '5px';
+              filePreviewContainer.appendChild(div);
+            }
+          });
+        });
+
+        messageInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            sendMessage();
+          }
+        });
+
+        // Add typing indicator
+        let typingTimeout;
+        messageInput.addEventListener('input', () => {
+          if (!userInfo || !currentConversation) return;
+
+          socket.emit('typing', {
+            conversationId: currentConversation.conversationUuid,
+            userId: userInfo.uuid,
+            isTyping: true,
+          });
+
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            socket.emit('typing', {
+              conversationId: currentConversation.conversationUuid,
+              userId: userInfo.uuid,
+              isTyping: false,
+            });
+          }, 2000);
+        });
+
+        // Functions
+        async function authenticateUser() {
+          const token = jwtToken.value.trim();
+          if (!token) {
+            alert('Please enter a JWT token');
+            return;
+          }
+
+          try {
+            // Save token to localStorage
+            localStorage.setItem('jwt_token', token);
+
+            // Show loading indicator
+            authLoader.classList.remove('hidden');
+            authText.textContent = 'Authenticating...';
+            authenticateBtn.disabled = true;
+
+            addDebugLog(`Authenticating with token: ${token.substring(0, 10)}...`);
+
+            // Authenticate socket connection directly instead of calling /users/me
+            socket.emit('authenticate', token, (response) => {
+              addDebugLog(`Socket authentication response: ${JSON.stringify(response)}`);
+
+              if (response.status === 'authenticated') {
+                // Assuming the user data is in the response
+                if (response.user) {
+                  userInfo = response.user;
+                } else {
+                  // If no user data in response, create minimal user info
+                  const tokenParts = token.split('.');
+                  try {
+                    // Try to extract user info from JWT payload
+                    if (tokenParts.length >= 2) {
+                      const payload = JSON.parse(atob(tokenParts[1]));
+                      userInfo = {
+                        uuid: payload.sub || 'unknown-id',
+                        username: payload.username || 'User',
+                      };
+                    }
+                  } catch (e) {
+                    // Fallback if token parsing fails
+                    userInfo = {
+                      uuid: 'jwt-user',
+                      username: 'Authenticated User',
+                    };
+                  }
+                }
+
+                // Update UI
+                userName.textContent = userInfo.username || 'Authenticated User';
+                userId.textContent = userInfo.uuid;
+                userAvatar.textContent = (userInfo.username || 'U').charAt(0).toUpperCase();
+
+                addMessage('Successfully authenticated', 'info');
+                addDebugLog('Socket authenticated successfully');
+              } else {
+                throw new Error(`Socket authentication failed: ${JSON.stringify(response)}`);
+              }
+            });
+          } catch (error) {
+            alert(`Authentication error: ${error.message}`);
+            addDebugLog(`Authentication error: ${error.message}`);
+            userInfo = null;
+          } finally {
+            // Hide loading indicator
+            authLoader.classList.add('hidden');
+            authText.textContent = 'Authenticate';
+            authenticateBtn.disabled = false;
+          }
+        }
+
+        async function getConversation() {
+          if (!userInfo) {
+            alert('Please authenticate first');
+            return;
+          }
+
+          const receiver = receiverId.value.trim();
+          if (!receiver) {
+            alert('Please enter a receiver ID');
+            return;
+          }
+
+          try {
+            addDebugLog(`Getting conversation with receiver: ${receiver}`);
+
+            // Get conversation history
+            const token = jwtToken.value.trim();
+
+            const defaultSearchParams = {
+              page: 1,
+              limit: 10,
+            };
+
+            // Thử URL không có prefix /api
+            const apiUrl = `http://localhost:3001/api/messages/conversation?receiverUuid=${receiver}&page=1&limit=10&sortDirection=DESC`;
+
+            addDebugLog(`API URL: ${apiUrl}`);
+
+            const headers = {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            };
+            addDebugLog(`Request headers: ${JSON.stringify(headers)}`);
+
+            const response = await fetch(apiUrl, {
+              headers: headers,
+            });
+
+            // Log status và headers để debug
+            addDebugLog(`Response status: ${response.status} ${response.statusText}`);
+
+            if (!response.ok) {
+              // Thử đọc chi tiết lỗi từ response để cung cấp thông tin chi tiết hơn
+              let errorDetail = '';
+              try {
+                const errorData = await response.json();
+                errorDetail = JSON.stringify(errorData);
+              } catch (e) {
+                errorDetail = await response.text();
+              }
+              addDebugLog(`Error response: ${errorDetail}`);
+              throw new Error(`API error (${response.status}): ${errorDetail || 'Failed to get conversation'}`);
+            }
+
+            const data = await response.json();
+            addDebugLog(`API response data: ${JSON.stringify(data)}`);
+
+            // Kiểm tra cấu trúc dữ liệu - dùng data.payload thay vì data.data
+            if (!data || !data.payload) {
+              throw new Error('Invalid response format: data.payload not found');
+            }
+
+            currentConversation = data.payload.conversation;
+
+            // Thêm kiểm tra cấu trúc dữ liệu
+            if (!currentConversation) {
+              addDebugLog('No conversation found, creating empty conversation object');
+              currentConversation = {
+                conversationUuid: '',
+                conversationTitle: '',
+              };
+            }
+
+            // Update UI
+            conversationId.value = currentConversation.conversationUuid || '';
+            messagesContainer.innerHTML = ''; // Clear messages
+
+            // Enable message input and attach button
+            messageInput.disabled = false;
+            sendMessageBtn.disabled = false;
+            attachBtn.disabled = false;
+
+            // Join socket room for this conversation if it has an ID
+            if (currentConversation.conversationUuid) {
+              socket.emit('joinRoom', { conversationId: currentConversation.conversationUuid }, (response) => {
+                if (response.status === 'joined') {
+                  addMessage(`Joined conversation: ${currentConversation.conversationUuid}`, 'info');
+                  addDebugLog(`Joined room: ${currentConversation.conversationUuid}`);
+                } else {
+                  addDebugLog(`Failed to join room: ${JSON.stringify(response)}`);
+                }
+              });
+            } else {
+              addMessage('New conversation - messages will create a new conversation', 'info');
+            }
+
+            // Load messages - cấu trúc dữ liệu thay đổi từ data.data.messages thành data.payload.messages
+            if (data.payload.messages && data.payload.messages.data) {
+              const messages = data.payload.messages.data;
+              if (messages.length === 0) {
+                addMessage('No previous messages', 'info');
+              } else {
+                // Log tin nhắn để debug
+                addDebugLog(`Received ${messages.length} messages from history`);
+
+                messages.forEach((msg) => {
+                  // Dựa vào thuộc tính isMyMessage từ API
+                  const isMyMessage = msg.isMyMessage;
+
+                  // Log tin nhắn chi tiết để debug
+                  addDebugLog(`Message ${msg.uuid}: ${msg.content}, mediaUrl type: ${typeof msg.mediaUrl}`);
+
+                  // Check for media content
+                  if (msg.mediaUrl) {
+                    try {
+                      // Kiểm tra nếu mediaUrl đã là object thì dùng trực tiếp, không cần parse
+                      let mediaData = msg.mediaUrl;
+
+                      // Nếu là string thì parse thành object
+                      if (typeof msg.mediaUrl === 'string') {
+                        mediaData = JSON.parse(msg.mediaUrl);
+                        addDebugLog(`Media parsed from string: ${JSON.stringify(mediaData)}`);
+                      } else {
+                        addDebugLog(`Media is already an object: ${JSON.stringify(mediaData)}`);
+                      }
+
+                      if (mediaData.images?.length > 0 || mediaData.videos?.length > 0) {
+                        // Create message with media
+                        addMessageWithMedia(
+                          msg.content,
+                          isMyMessage ? 'sent' : 'received',
+                          isMyMessage ? null : msg.user?.username || 'Unknown',
+                          mediaData,
+                        );
+                        return; // Skip regular message creation
+                      }
+                    } catch (e) {
+                      addDebugLog(`Error processing media data for message ${msg.uuid}: ${e.message}`);
+                    }
+                  }
+
+                  // Regular text message
+                  addMessage(
+                    msg.content,
+                    isMyMessage ? 'sent' : 'received',
+                    isMyMessage ? null : msg.user?.username || 'Unknown',
+                  );
+                });
+              }
+            }
+
+            addDebugLog(`Conversation setup complete`);
+          } catch (error) {
+            alert(`Error getting conversation: ${error.message}`);
+            addDebugLog(`Error getting conversation: ${error.message}`);
+
+            // Vẫn cho phép chat ngay cả khi không tìm thấy hội thoại
+            // Vì tin nhắn đầu tiên sẽ tạo một hội thoại mới
+            messageInput.disabled = false;
+            sendMessageBtn.disabled = false;
+            attachBtn.disabled = false;
+            currentConversation = { conversationUuid: '', conversationTitle: '' };
+            addMessage('No existing conversation found. Send a message to start a new conversation.', 'info');
+          }
+        }
+
+        function sendMessage() {
+          const message = messageInput.value.trim();
+          if (!message && selectedFiles.length === 0) return;
+
+          if (!userInfo) {
+            alert('Please authenticate first');
+            return;
+          }
+
+          const token = jwtToken.value.trim();
+          const isFileUpload = selectedFiles.length > 0;
+
+          if (isFileUpload) {
+            // Use FormData for file uploads
+            const formData = new FormData();
+
+            // Đảm bảo tên trường đúng theo yêu cầu của backend
+            formData.append('conversationUuid', currentConversation?.conversationUuid || '');
+            formData.append('receiverUuid', receiverId.value.trim());
+            formData.append('content', message);
+
+            // Log trước khi thêm files để debug
+            addDebugLog(`Preparing to send message with ${selectedFiles.length} files`);
+            addDebugLog(
+              `FormData initial: conversationUuid=${currentConversation?.conversationUuid || ''}, receiverUuid=${receiverId.value.trim()}, content=${message}`,
+            );
+
+            // Thêm files vào FormData với tên trường đúng
+            selectedFiles.forEach((file, index) => {
+              // Đảm bảo tên trường 'files' giống như trong controller
+              formData.append('files', file, file.name);
+              addDebugLog(`Added file ${index + 1}: ${file.name}, type: ${file.type}, size: ${file.size} bytes`);
+            });
+
+            // In ra form data để debug
+            for (let [key, value] of formData.entries()) {
+              addDebugLog(`FormData entry - ${key}: ${value instanceof File ? value.name : value}`);
+            }
+
+            // Log thông tin gửi
+            addDebugLog(`Sending message with ${selectedFiles.length} files to endpoint: /api/messages/send`);
+
+            // Hiển thị trạng thái gửi
+            uploadStatus.textContent = 'Sending...';
+            uploadStatus.style.display = 'inline-block';
+
+            fetch('http://localhost:3001/api/messages/send', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                // Không đặt Content-Type, để trình duyệt tự xử lý với boundary
+              },
+              body: formData,
+            })
+              .then((response) => {
+                addDebugLog(`Response status: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                  // Try to get more error details
+                  return response.text().then((text) => {
+                    try {
+                      // Try to parse as JSON
+                      const errorData = JSON.parse(text);
+                      addDebugLog(`Error response: ${JSON.stringify(errorData)}`);
+                      throw new Error(`HTTP error ${response.status}: ${JSON.stringify(errorData)}`);
+                    } catch (e) {
+                      // If not JSON, use as text
+                      addDebugLog(`Error response text: ${text}`);
+                      throw new Error(`HTTP error ${response.status}: ${text}`);
+                    }
+                  });
+                }
+                return response.json();
+              })
+              .then((data) => {
+                addDebugLog(`Message with files sent successfully: ${JSON.stringify(data)}`);
+                uploadStatus.textContent = 'Sent!';
+                setTimeout(() => {
+                  uploadStatus.style.display = 'none';
+                }, 3000);
+
+                // Add message to UI with file previews
+                addMessage(message, 'sent', null, selectedFiles);
+
+                // Clear input and files
+                messageInput.value = '';
+                selectedFiles = [];
+                fileInput.value = '';
+                filePreviewContainer.innerHTML = '';
+
+                // Update conversation if needed
+                if (!currentConversation.conversationUuid && data.payload && data.payload.conversationUuid) {
+                  currentConversation.conversationUuid = data.payload.conversationUuid;
+                  conversationId.value = currentConversation.conversationUuid;
+                  addDebugLog(`Updated conversation ID to: ${currentConversation.conversationUuid}`);
+
+                  // Join the Socket.io room
+                  socket.emit('joinRoom', { conversationId: currentConversation.conversationUuid });
+                }
+
+                // Refresh conversation
+                if (currentConversation.conversationUuid) {
+                  setTimeout(() => {
+                    addDebugLog(`Refreshing conversation after sending message with files`);
+                    getConversation();
+                  }, 500);
+                }
+              })
+              .catch((error) => {
+                addDebugLog(`Failed to send message with files: ${error.message}`);
+                alert('Failed to send message with files. Please try again.');
+              });
+          } else {
+            // Regular JSON message without files
+            const messageDto = {
+              conversationId: currentConversation?.conversationUuid || '',
+              receiverId: receiverId.value.trim(),
+              content: message,
+            };
+
+            addDebugLog(`Sending text message: ${JSON.stringify(messageDto)}`);
+
+            fetch('http://localhost:3001/api/messages/send', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(messageDto),
+            })
+              .then((response) => {
+                if (!response.ok) {
+                  throw new Error(`HTTP error ${response.status}`);
+                }
+                return response.json();
+              })
+              .then((data) => {
+                addDebugLog(`Message sent successfully via API: ${JSON.stringify(data)}`);
+                addMessage(message, 'sent');
+                messageInput.value = '';
+
+                // Sau khi gửi thành công, hãy cập nhật conversation nếu là hội thoại mới
+                if (!currentConversation.conversationUuid && data.payload && data.payload.conversationUuid) {
+                  currentConversation.conversationUuid = data.payload.conversationUuid;
+                  conversationId.value = currentConversation.conversationUuid;
+                  addDebugLog(`Updated conversation ID to: ${currentConversation.conversationUuid}`);
+
+                  // Tham gia phòng Socket.io
+                  socket.emit('joinRoom', { conversationId: currentConversation.conversationUuid });
+                }
+
+                // Thêm refresh lại danh sách tin nhắn sau khi gửi
+                if (currentConversation.conversationUuid) {
+                  setTimeout(() => {
+                    addDebugLog(`Refreshing conversation after sending message`);
+                    getConversation();
+                  }, 500);
+                }
+              })
+              .catch((error) => {
+                addDebugLog(`Failed to send message via API: ${error.message}`);
+
+                // Thử gửi qua Socket.io nếu API thất bại
+                addDebugLog('Falling back to Socket.io for sending message');
+                const socketMessage = {
+                  messageId: generateUUID(),
+                  conversationId: currentConversation.conversationUuid || '',
+                  senderId: userInfo.uuid,
+                  receiverId: receiverId.value.trim(),
+                  content: message,
+                };
+
+                socket.emit('sendMessage', socketMessage, (response) => {
+                  if (response.status === 'sent') {
+                    addMessage(message, 'sent');
+                    messageInput.value = '';
+                    addDebugLog(`Message sent successfully via socket`);
+                  } else {
+                    addDebugLog(`Failed to send message via socket: ${JSON.stringify(response)}`);
+                    alert('Failed to send message. Please try again.');
+                  }
+                });
+              });
+          }
+        }
+
+        function addMessage(text, type, sender = null, files = []) {
+          const message = document.createElement('div');
+          message.classList.add('message', type);
+
+          // Create message content
+          const content = document.createElement('div');
+          content.textContent = text;
+          message.appendChild(content);
+
+          // Add file previews if any
+          if (files && files.length > 0) {
+            const mediaContainer = document.createElement('div');
+            mediaContainer.style.marginTop = '8px';
+            mediaContainer.style.display = 'flex';
+            mediaContainer.style.flexWrap = 'wrap';
+            mediaContainer.style.gap = '5px';
+
+            files.forEach((file) => {
+              if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const img = document.createElement('img');
+                  img.src = e.target.result;
+                  img.style.maxWidth = '200px';
+                  img.style.maxHeight = '200px';
+                  img.style.borderRadius = '5px';
+                  mediaContainer.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+              } else if (file.type.startsWith('video/')) {
+                const videoInfo = document.createElement('div');
+                videoInfo.textContent = `Video: ${file.name}`;
+                videoInfo.style.backgroundColor = '#f0f0f0';
+                videoInfo.style.padding = '5px';
+                videoInfo.style.borderRadius = '5px';
+                mediaContainer.appendChild(videoInfo);
+              }
+            });
+
+            message.appendChild(mediaContainer);
+          }
+
+          // Add sender info for received messages
+          if (type === 'received' && sender) {
+            const senderInfo = document.createElement('div');
+            senderInfo.textContent = `From: ${sender}`;
+            senderInfo.style.fontSize = '11px';
+            senderInfo.style.marginTop = '4px';
+            senderInfo.style.opacity = '0.7';
+            message.appendChild(senderInfo);
+          }
+
+          // Add timestamp
+          const timestamp = document.createElement('div');
+          timestamp.classList.add('message-time');
+          timestamp.textContent = new Date().toLocaleTimeString();
+          message.appendChild(timestamp);
+
+          messagesContainer.appendChild(message);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addMessageWithMedia(text, type, sender = null, mediaData) {
+          const message = document.createElement('div');
+          message.classList.add('message', type);
+
+          // Create message content
+          const content = document.createElement('div');
+          content.textContent = text || '';
+          message.appendChild(content);
+
+          // Log the media data for debugging
+          addDebugLog(`Creating message with media: ${JSON.stringify(mediaData)}`);
+
+          // Add media container
+          const mediaContainer = document.createElement('div');
+          mediaContainer.style.marginTop = '8px';
+          mediaContainer.style.display = 'flex';
+          mediaContainer.style.flexWrap = 'wrap';
+          mediaContainer.style.gap = '5px';
+
+          // Add images if any
+          if (mediaData.images && mediaData.images.length > 0) {
+            addDebugLog(`Adding ${mediaData.images.length} images to message`);
+
+            mediaData.images.forEach((image, index) => {
+              if (image.url) {
+                addDebugLog(`Processing image ${index + 1}: ${image.url}`);
+                const img = document.createElement('img');
+                img.src = image.url;
+                img.style.maxWidth = '200px';
+                img.style.maxHeight = '200px';
+                img.style.borderRadius = '5px';
+                img.style.cursor = 'pointer';
+
+                // Add click event to open full image in new tab
+                img.addEventListener('click', () => {
+                  window.open(image.url, '_blank');
+                });
+
+                // Add error handling for images
+                img.onerror = function () {
+                  addDebugLog(`Error loading image: ${image.url}`);
+                  this.style.display = 'none';
+
+                  // Add a placeholder
+                  const errorDiv = document.createElement('div');
+                  errorDiv.textContent = 'Image unavailable';
+                  errorDiv.style.backgroundColor = '#f8d7da';
+                  errorDiv.style.color = '#721c24';
+                  errorDiv.style.padding = '5px';
+                  errorDiv.style.borderRadius = '5px';
+                  mediaContainer.appendChild(errorDiv);
+                };
+
+                img.onload = function () {
+                  addDebugLog(`Image loaded successfully: ${image.url}`);
+                };
+
+                mediaContainer.appendChild(img);
+              }
+            });
+          }
+
+          // Add videos if any
+          if (mediaData.videos && mediaData.videos.length > 0) {
+            addDebugLog(`Adding ${mediaData.videos.length} videos to message`);
+
+            mediaData.videos.forEach((video, index) => {
+              if (video.url) {
+                addDebugLog(`Processing video ${index + 1}: ${video.url}`);
+                const videoElement = document.createElement('video');
+                videoElement.src = video.url;
+                videoElement.controls = true;
+                videoElement.style.maxWidth = '200px';
+                videoElement.style.borderRadius = '5px';
+
+                // Add error handling
+                videoElement.onerror = function () {
+                  addDebugLog(`Error loading video: ${video.url}`);
+                  this.style.display = 'none';
+
+                  // Add a placeholder
+                  const errorDiv = document.createElement('div');
+                  errorDiv.textContent = 'Video unavailable';
+                  errorDiv.style.backgroundColor = '#f8d7da';
+                  errorDiv.style.color = '#721c24';
+                  errorDiv.style.padding = '5px';
+                  errorDiv.style.borderRadius = '5px';
+                  mediaContainer.appendChild(errorDiv);
+                };
+
+                mediaContainer.appendChild(videoElement);
+              }
+            });
+          }
+
+          // Only append container if it has children
+          if (mediaContainer.children.length > 0) {
+            message.appendChild(mediaContainer);
+          }
+
+          // Add sender info for received messages
+          if (type === 'received' && sender) {
+            const senderInfo = document.createElement('div');
+            senderInfo.textContent = `From: ${sender}`;
+            senderInfo.style.fontSize = '11px';
+            senderInfo.style.marginTop = '4px';
+            senderInfo.style.opacity = '0.7';
+            message.appendChild(senderInfo);
+          }
+
+          // Add timestamp
+          const timestamp = document.createElement('div');
+          timestamp.classList.add('message-time');
+          timestamp.textContent = new Date().toLocaleTimeString();
+          message.appendChild(timestamp);
+
+          messagesContainer.appendChild(message);
+          messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function addDebugLog(message) {
+          const logEntry = document.createElement('div');
+          logEntry.classList.add('log-entry');
+
+          // Add timestamp
+          const time = new Date().toLocaleTimeString();
+          logEntry.textContent = `[${time}] ${message}`;
+
+          debugLog.appendChild(logEntry);
+          debugLog.scrollTop = debugLog.scrollHeight;
+        }
+
+        function generateUUID() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

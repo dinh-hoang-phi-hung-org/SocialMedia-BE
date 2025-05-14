@@ -83,9 +83,10 @@ export class StorageService {
       return [];
     }
 
-    const uploadPromises: Promise<MediaFile>[] = files.map(async (file, index) => {
+    const uploadPromises: Promise<MediaFile>[] = files.map(async (file) => {
       try {
-        const url = await this.uploadFile(file, path, `${index}`);
+        const timestamp = Date.now();
+        const url = await this.uploadFile(file, path, timestamp.toString());
         const type = this.getMediaType(file.mimetype);
 
         return {

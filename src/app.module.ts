@@ -10,6 +10,8 @@ import { RedisModule } from './modules/redis/redis.module';
 import { FollowModule } from './modules/follow/follow.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { PostsModule } from './modules/posts/posts.module';
+import { MessageModule } from './modules/message/message.module';
+import { SocketModule } from './modules/socket/socket.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { PostsModule } from './modules/posts/posts.module';
     RedisModule,
     FollowModule,
     PostsModule,
+    MessageModule,
+    SocketModule,
     StorageModule,
   ],
 })

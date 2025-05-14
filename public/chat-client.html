@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Chat Client</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+      .chat-container {
+        flex: 1;
+        border: 1px solid #ccc;
+        padding: 10px;
+        margin-bottom: 10px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .control-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .message-form {
+        display: flex;
+        gap: 10px;
+      }
+      .message-input {
+        flex: 1;
+        padding: 8px;
+      }
+      .connection-status {
+        padding: 5px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        text-align: center;
+        font-weight: bold;
+      }
+      .connected {
+        background-color: #d4edda;
+        color: #155724;
+      }
+      .disconnected {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+      .message {
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 4px;
+        max-width: 70%;
+        word-wrap: break-word;
+      }
+      .sent {
+        align-self: flex-end;
+        background-color: #d1ecf1;
+        color: #0c5460;
+      }
+      .received {
+        align-self: flex-start;
+        background-color: #e2e3e5;
+        color: #383d41;
+      }
+      .info {
+        align-self: center;
+        font-style: italic;
+        color: #6c757d;
+      }
+      .auth-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>WebSocket Chat Client</h1>
+
+      <div class="connection-status disconnected" id="connection-status">Disconnected</div>
+
+      <div class="auth-container">
+        <input type="text" id="userId" placeholder="Enter your user ID" />
+        <button id="authenticate">Authenticate</button>
+      </div>
+
+      <div class="control-container">
+        <div>
+          <input type="text" id="conversation-id" placeholder="Conversation ID" />
+          <button id="join-room">Join Room</button>
+          <button id="leave-room">Leave Room</button>
+        </div>
+
+        <div class="message-form">
+          <input type="text" id="message-input" class="message-input" placeholder="Type your message..." />
+          <button id="send-button">Send</button>
+        </div>
+      </div>
+
+      <h2>Messages</h2>
+      <div class="chat-container" id="chat-container"></div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const socket = io('http://localhost:3001/chat', {
+          transports: ['websocket'],
+          autoConnect: false,
+        });
+
+        const connectionStatus = document.getElementById('connection-status');
+        const authenticateBtn = document.getElementById('authenticate');
+        const userId = document.getElementById('userId');
+        const joinRoomBtn = document.getElementById('join-room');
+        const leaveRoomBtn = document.getElementById('leave-room');
+        const conversationId = document.getElementById('conversation-id');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const chatContainer = document.getElementById('chat-container');
+
+        // Connect to the server when the page loads
+        socket.connect();
+
+        // Update connection status
+        socket.on('connect', () => {
+          connectionStatus.textContent = 'Connected';
+          connectionStatus.classList.remove('disconnected');
+          connectionStatus.classList.add('connected');
+          addMessage('Connected to server', 'info');
+        });
+
+        socket.on('disconnect', () => {
+          connectionStatus.textContent = 'Disconnected';
+          connectionStatus.classList.remove('connected');
+          connectionStatus.classList.add('disconnected');
+          addMessage('Disconnected from server', 'info');
+        });
+
+        // Authenticate
+        authenticateBtn.addEventListener('click', () => {
+          if (!userId.value) {
+            alert('Please enter a user ID');
+            return;
+          }
+
+          socket.emit('authenticate', userId.value, (response) => {
+            if (response.status === 'authenticated') {
+              addMessage(`Authenticated as user ${userId.value}`, 'info');
+            }
+          });
+        });
+
+        // Join room
+        joinRoomBtn.addEventListener('click', () => {
+          if (!conversationId.value) {
+            alert('Please enter a conversation ID');
+            return;
+          }
+
+          socket.emit('joinRoom', { conversationId: conversationId.value }, (response) => {
+            if (response.status === 'joined') {
+              addMessage(`Joined conversation: ${conversationId.value}`, 'info');
+            }
+          });
+        });
+
+        // Leave room
+        leaveRoomBtn.addEventListener('click', () => {
+          if (!conversationId.value) {
+            alert('Please enter a conversation ID');
+            return;
+          }
+
+          socket.emit('leaveRoom', { conversationId: conversationId.value }, (response) => {
+            if (response.status === 'left') {
+              addMessage(`Left conversation: ${conversationId.value}`, 'info');
+            }
+          });
+        });
+
+        // Send message
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            sendMessage();
+          }
+        });
+
+        function sendMessage() {
+          const message = messageInput.value.trim();
+          if (!message) return;
+
+          if (!userId.value) {
+            alert('Please authenticate first');
+            return;
+          }
+
+          if (!conversationId.value) {
+            alert('Please join a conversation first');
+            return;
+          }
+
+          const messageData = {
+            messageId: generateUUID(),
+            conversationId: conversationId.value,
+            senderId: userId.value,
+            content: message,
+          };
+
+          socket.emit('sendMessage', messageData, (response) => {
+            if (response.status === 'sent') {
+              addMessage(`${message}`, 'sent');
+              messageInput.value = '';
+            }
+          });
+        }
+
+        // Receive message
+        socket.on('receiveMessage', (data) => {
+          addMessage(`${data.content} (from ${data.senderId})`, 'received');
+        });
+
+        // Typing indicator
+        let typingTimeout;
+        messageInput.addEventListener('input', () => {
+          if (!userId.value || !conversationId.value) return;
+
+          socket.emit('typing', {
+            conversationId: conversationId.value,
+            userId: userId.value,
+            isTyping: true,
+          });
+
+          clearTimeout(typingTimeout);
+          typingTimeout = setTimeout(() => {
+            socket.emit('typing', {
+              conversationId: conversationId.value,
+              userId: userId.value,
+              isTyping: false,
+            });
+          }, 2000);
+        });
+
+        // Handle typing indicators
+        socket.on('userTyping', (data) => {
+          const typingIndicator = document.getElementById('typing-' + data.userId);
+
+          if (data.isTyping) {
+            if (!typingIndicator) {
+              const element = document.createElement('div');
+              element.id = 'typing-' + data.userId;
+              element.classList.add('message', 'info');
+              element.textContent = `${data.userId} is typing...`;
+              chatContainer.appendChild(element);
+              chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+          } else {
+            if (typingIndicator) {
+              typingIndicator.remove();
+            }
+          }
+        });
+
+        // Helper functions
+        function addMessage(text, type) {
+          const message = document.createElement('div');
+          message.classList.add('message', type);
+          message.textContent = text;
+          chatContainer.appendChild(message);
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function generateUUID() {
+          return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+            const r = (Math.random() * 16) | 0;
+            const v = c === 'x' ? r : (r & 0x3) | 0x8;
+            return v.toString(16);
+          });
+        }
+      });
+    </script>
+  </body>
+</html>

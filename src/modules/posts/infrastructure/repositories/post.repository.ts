@@ -1,32 +1,59 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { IPostRepository } from '@/modules/posts/domain/interfaces/post-repository.interface';
 import { PostOrmEntity } from '@/modules/posts/infrastructure/orm/posts.entity.orm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsOrder, FindOptionsWhere, Repository, SortDirection } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 import { SearchOptions } from '@/shared/types/search-options';
+import { AbstractRepository } from '@/shared/repositories/abstract.repository';
 
 @Injectable()
-export class PostRepository implements IPostRepository {
+export class PostRepository extends AbstractRepository<PostOrmEntity> implements IPostRepository {
   constructor(
     @InjectRepository(PostOrmEntity)
     private readonly postRepository: Repository<PostOrmEntity>,
-  ) {}
+  ) {
+    super({
+      searchableFields: ['userUuid'],
+      sortableFields: ['createdAt'],
+    });
+  }
 
   async findAllByUuidUser(uuid: string, query: SearchOptions): Promise<PaginatedResult<PostOrmEntity>> {
-    const { page, limit } = query;
+    const { searchFields, searchValue, page, limit, sortBy, sortDirection } = query;
 
-    const where: FindOptionsWhere<PostOrmEntity>[] = [{ userUuid: uuid, isHidden: false }];
+    let where: FindOptionsWhere<PostOrmEntity>[] = [{ userUuid: uuid, isHidden: false }];
+
+    if (searchFields && searchFields.length > 0) {
+      if (!searchFields.includes('all')) {
+        this.validateSearchFields(searchFields);
+        where = this.buildWhereConditions(searchFields, searchValue || '');
+      } else {
+        where = this.buildWhereConditions(this.options.searchableFields, searchValue || '');
+      }
+      // Add following_uuid condition to each where clause
+      where = where.map((w) => ({ ...w, userUuid: uuid, isHidden: false }));
+    }
+
+    let orderBy: FindOptionsOrder<PostOrmEntity>;
+    if (sortBy && sortBy != '') {
+      this.validateSortFields(sortBy);
+      orderBy = { [sortBy]: sortDirection as unknown as SortDirection };
+    } else {
+      orderBy = { createdAt: 'DESC' };
+    }
 
     const skip = (page - 1) * limit;
     const [posts, total] = await this.postRepository.findAndCount({
       where: where,
       skip,
       take: limit,
+      order: orderBy,
       relations: ['user'],
     });
 
     const lastPage = Math.ceil(total / limit);
+    console.log('posts', posts);
     return {
       data: posts,
       meta: {

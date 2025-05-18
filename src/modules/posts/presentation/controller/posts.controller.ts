@@ -193,7 +193,6 @@ export class PostsController {
       page,
       limit,
     });
-    console.log(post);
     return new ApiSuccessResponse(this.postMapper.toPaginatedDTO(post));
   }
 }

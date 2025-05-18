@@ -9,6 +9,7 @@ import { UserMapper } from './application/mapper/user.mapper';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { FollowModule } from '@/modules/follow/follow.module';
 import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.entity.orm';
+import { GetMeUseCase } from './application/use-cases/get-me.use-case';
 @Module({
   imports: [TypeOrmModule.forFeature([UserOrmEntity, FollowOrmEntity]), forwardRef(() => FollowModule)],
   controllers: [UsersController],
@@ -16,6 +17,7 @@ import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.enti
     UserMapper,
     GetUsersUseCase,
     GetUserByUuidUseCase,
+    GetMeUseCase,
     UserRepository,
     JwtAuthGuard,
     {

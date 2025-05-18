@@ -13,7 +13,7 @@ import { RolesGuard } from '@/shared/guards/roles.guard';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UserRole } from '@/shared/enum/role';
 import { GetUser } from '@/shared/decorators/get-user.decorator';
-
+import { GetMeUseCase } from '@/modules/users/application/use-cases/get-me.use-case';
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -22,6 +22,7 @@ export class UsersController {
     private readonly userMapper: UserMapper,
     private readonly getUsersUseCase: GetUsersUseCase,
     private readonly getUserByUuidUseCase: GetUserByUuidUseCase,
+    private readonly getMeUseCase: GetMeUseCase,
   ) {}
 
   @Get()
@@ -48,6 +49,15 @@ export class UsersController {
     });
 
     return new ApiSuccessResponse(this.userMapper.toPaginatedDTO(result));
+  }
+
+  @Get('me')
+  @ApiBearerAuth('access-token')
+  @Roles(UserRole.ADMIN, UserRole.USER)
+  @ApiOperation({ summary: 'Get current user' })
+  async getCurrentUser(@GetUser() currentUser: { uuid: string }): Promise<ApiSuccessResponse<UserResponseDto>> {
+    const user = await this.getMeUseCase.execute(currentUser.uuid);
+    return new ApiSuccessResponse(this.userMapper.toDTO(user));
   }
 
   @Get(':uuid')

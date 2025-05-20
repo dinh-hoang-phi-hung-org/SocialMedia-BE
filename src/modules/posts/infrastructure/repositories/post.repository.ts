@@ -53,7 +53,7 @@ export class PostRepository extends AbstractRepository<PostOrmEntity> implements
     });
 
     const lastPage = Math.ceil(total / limit);
-    console.log('posts', posts);
+    // console.log('posts', posts);
     return {
       data: posts,
       meta: {

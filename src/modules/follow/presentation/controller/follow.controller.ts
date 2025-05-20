@@ -1,10 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Delete, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { RolesGuard } from '@/shared/guards/roles.guard';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { UserRole } from '@/shared/enum/role';
-import { FollowDto } from '@/modules/follow/presentation/dtos/follow.dto';
 import { GetUser } from '@/shared/decorators/get-user.decorator';
 import { ApiSuccessResponse } from '@/shared/dtos/api-response.dto';
 import { FollowUserUseCase } from '@/modules/follow/application/use-cases/follow-user.use-case';
@@ -37,11 +36,11 @@ export class FollowController {
   @ApiBearerAuth('access-token')
   @Roles(UserRole.USER)
   @ApiOperation({ summary: 'Follow a user' })
+  @ApiQuery({ name: 'followingUuid', type: String, required: true })
   async followUser(
     @GetUser() currentUser: { uuid: string },
-    @Body() body: FollowDto,
+    @Query('followingUuid') followingUuid: string,
   ): Promise<ApiSuccessResponse<{ message: string }>> {
-    const { followingUuid } = body;
     await this.followUserUseCase.execute(currentUser.uuid, followingUuid);
     await this.adjustUserFollowingCountUseCase.execute(currentUser.uuid, true);
     await this.adjustUserFollowerCountUseCase.execute(followingUuid, true);
@@ -54,11 +53,11 @@ export class FollowController {
   @ApiBearerAuth('access-token')
   @Roles(UserRole.USER)
   @ApiOperation({ summary: 'Unfollow a user' })
+  @ApiQuery({ name: 'followingUuid', type: String, required: true })
   async unfollowUser(
     @GetUser() currentUser: { uuid: string },
-    @Body() body: FollowDto,
+    @Query('followingUuid') followingUuid: string,
   ): Promise<ApiSuccessResponse<{ message: string }>> {
-    const { followingUuid } = body;
     await this.unfollowUserUseCase.execute(currentUser.uuid, followingUuid);
     await this.adjustUserFollowingCountUseCase.execute(currentUser.uuid, false);
     await this.adjustUserFollowerCountUseCase.execute(followingUuid, false);

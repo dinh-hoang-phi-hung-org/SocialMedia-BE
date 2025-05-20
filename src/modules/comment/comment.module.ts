@@ -1,0 +1,33 @@
+import { Module } from '@nestjs/common';
+import { CommentController } from './presentation/controller/comment.controller';
+import { PostCommentUseCase } from './application/use-cases/post-comment.use-case';
+import { CommentRepository } from './infrastructure/repositories/comment.repository';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CommentOrmEntity } from './infrastructure/orm/comment.entity.orm';
+import { GetCommentByPostUuidUseCase } from './application/use-cases/get-comment-by-post-uuid.use-case';
+import { CommentMapper } from './application/mapper/comment.mapper';
+import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
+import { GetCommentByPostUuidAndParentUuidUseCase } from './application/use-cases/get-comment-by-post-uuid-and-parent-uuid.use-case';
+import { StorageModule } from '@/modules/storage/storage.module';
+import { UpdateCommentToCreateUseCase } from '@/modules/comment/application/use-cases/update-comment-to-create.use-case';
+import { DeleteCommentUseCase } from '@/modules/comment/application/use-cases/delete-comment.use-case';
+@Module({
+  imports: [TypeOrmModule.forFeature([CommentOrmEntity]), StorageModule],
+  controllers: [CommentController],
+  providers: [
+    PostCommentUseCase,
+    CommentRepository,
+    GetCommentByPostUuidUseCase,
+    GetCommentByPostUuidAndParentUuidUseCase,
+    CommentMapper,
+    UserMapper,
+    DeleteCommentUseCase,
+    UpdateCommentToCreateUseCase,
+    {
+      provide: 'ICommentRepository',
+      useExisting: CommentRepository,
+    },
+  ],
+  exports: [CommentRepository, TypeOrmModule.forFeature([CommentOrmEntity]), 'ICommentRepository'],
+})
+export class CommentModule {}

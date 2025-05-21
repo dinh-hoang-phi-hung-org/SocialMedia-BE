@@ -27,7 +27,7 @@ export class UsersController {
 
   @Get()
   @ApiBearerAuth('access-token')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Get all users with pagination and search' })
   async getUsers(@Query() searchDto: SearchDto): Promise<ApiSuccessResponse<PaginatedResult<UserResponseDto>>> {
     const {
@@ -39,6 +39,7 @@ export class UsersController {
       sortDirection = SortDirection.DESC,
     } = searchDto;
     const searchFieldsArray = searchFields ? searchFields.split(',').map((field) => field.trim()) : [];
+    console.log(searchFieldsArray);
     const result = await this.getUsersUseCase.execute({
       searchFields: searchFieldsArray,
       searchValue,

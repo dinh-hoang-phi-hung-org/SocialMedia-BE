@@ -15,7 +15,17 @@ export class UserRepository extends AbstractRepository<UserOrmEntity> implements
   ) {
     super({
       searchableFields: ['username', 'email', 'first_name', 'last_name'],
-      sortableFields: ['createdAt', 'username', 'email', 'first_name', 'last_name'],
+      sortableFields: [
+        'createdAt',
+        'username',
+        'email',
+        'first_name',
+        'last_name',
+        'followers_count',
+        'followings_count',
+        'posts_count',
+        'last_login',
+      ],
     });
   }
 

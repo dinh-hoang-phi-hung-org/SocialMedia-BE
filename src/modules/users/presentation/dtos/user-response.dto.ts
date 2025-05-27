@@ -10,11 +10,11 @@ export class UserResponseDto {
   profilePictureUrl: string;
   bio: string;
   dateOfBirth: Date;
-  lastLogin: Date;
+  lastLogin: string;
   gender: Gender;
   role: UserRole;
   isActive: boolean;
-  createdAt: Date;
+  createdAt: string;
   followersCount: number;
   followingsCount: number;
   postsCount: number;

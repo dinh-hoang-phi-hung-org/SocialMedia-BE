@@ -3,6 +3,7 @@ import { ShortcutUserResponseDto } from '@/modules/users/presentation/dtos/short
 import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.orm';
 import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 import { Injectable } from '@nestjs/common';
+import { formatTime } from '@/shared/helpers/formatTime';
 
 @Injectable()
 export class UserMapper {
@@ -19,8 +20,8 @@ export class UserMapper {
       gender: user.gender,
       role: user.role,
       isActive: user.is_active,
-      createdAt: user.createdAt,
-      lastLogin: user.last_login,
+      createdAt: formatTime(user.createdAt),
+      lastLogin: formatTime(user.last_login),
       followersCount: user.followers_count,
       followingsCount: user.followings_count,
       postsCount: user.posts_count,

@@ -90,7 +90,7 @@ export class CommentController {
       }),
     ) // eslint-disable-next-line @typescript-eslint/no-explicit-any
     files: Array<any>,
-  ): Promise<ApiSuccessResponse<{ message: string; commentUuid: string }>> {
+  ): Promise<ApiSuccessResponse<{ message: string; comment: CommentResponseDto }>> {
     if (files && files.length > 0) {
       const imageFiles = files.filter((file) => this.storageService.getMediaType(file.mimetype) === FileType.IMAGE);
       const videoFiles = files.filter((file) => this.storageService.getMediaType(file.mimetype) === FileType.VIDEO);
@@ -131,7 +131,7 @@ export class CommentController {
 
     return new ApiSuccessResponse({
       message: 'Comment created successfully',
-      commentUuid: newComment.uuid,
+      comment: this.commentMapper.toDTO(newComment),
     });
   }
 

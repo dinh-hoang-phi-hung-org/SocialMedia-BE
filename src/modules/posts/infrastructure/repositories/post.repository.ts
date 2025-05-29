@@ -22,7 +22,7 @@ export class PostRepository extends AbstractRepository<PostOrmEntity> implements
   async findAllByUuidUser(uuid: string, query: SearchOptions): Promise<PaginatedResult<PostOrmEntity>> {
     const { searchFields, searchValue, page, limit, sortBy, sortDirection } = query;
 
-    let where: FindOptionsWhere<PostOrmEntity>[] = [{ userUuid: uuid, isHidden: false }];
+    let where: FindOptionsWhere<PostOrmEntity>[] = [{ userUuid: uuid, isHidden: false, isDeleted: false }];
 
     if (searchFields && searchFields.length > 0) {
       if (!searchFields.includes('all')) {
@@ -31,8 +31,7 @@ export class PostRepository extends AbstractRepository<PostOrmEntity> implements
       } else {
         where = this.buildWhereConditions(this.options.searchableFields, searchValue || '');
       }
-      // Add following_uuid condition to each where clause
-      where = where.map((w) => ({ ...w, userUuid: uuid, isHidden: false }));
+      where = where.map((w) => ({ ...w, isHidden: false, isDeleted: false, userUuid: uuid }));
     }
 
     let orderBy: FindOptionsOrder<PostOrmEntity>;
@@ -93,7 +92,7 @@ export class PostRepository extends AbstractRepository<PostOrmEntity> implements
       relations: ['user'],
     });
     if (!post) {
-      throw new NotFoundException(`Post with UUID ${uuid} not found`);
+      throw new NotFoundException('common:message.post_not_found');
     }
     return post;
   }
@@ -120,5 +119,10 @@ export class PostRepository extends AbstractRepository<PostOrmEntity> implements
     if (result.affected === 0) {
       throw new NotFoundException(`Post with UUID ${uuid} not found`);
     }
+  }
+
+  async softDelete(uuid: string, field: string, value: any): Promise<void> {
+    await this.findByUuid(uuid);
+    await this.postRepository.update({ uuid }, { [field]: value });
   }
 }

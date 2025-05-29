@@ -4,9 +4,13 @@ import { CommentResponseDto } from '../../presentation/dtos/comment.dto';
 import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
 import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 import { MediaFile } from '@/modules/storage/storage.service';
+import { PostMapper } from '@/modules/posts/application/mapper/post.mapper';
 @Injectable()
 export class CommentMapper {
-  constructor(private readonly userMapper: UserMapper) {}
+  constructor(
+    private readonly userMapper: UserMapper,
+    private readonly postMapper: PostMapper,
+  ) {}
 
   toDTO(comment: CommentOrmEntity): CommentResponseDto {
     return {
@@ -18,6 +22,7 @@ export class CommentMapper {
       mediaUrl: comment.mediaUrl
         ? (Object(comment.mediaUrl) as { images: MediaFile[]; videos: MediaFile[] })
         : undefined,
+      post: comment.post ? this.postMapper.toDTO(comment.post) : undefined,
     };
   }
 

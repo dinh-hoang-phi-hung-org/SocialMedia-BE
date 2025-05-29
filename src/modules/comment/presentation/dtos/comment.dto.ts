@@ -2,6 +2,7 @@ import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { ShortcutUserResponseDto } from '@/modules/users/presentation/dtos/shortcut-user-response.dto';
 import { MediaFile } from '@/modules/storage/storage.service';
+import { PostResponseDto } from '@/modules/posts/presentation/dtos/post-reponse.dto';
 export class PostCommentDto {
   @IsString()
   @IsNotEmpty()
@@ -27,6 +28,8 @@ export class CommentResponseDto {
   content: string;
 
   user?: ShortcutUserResponseDto;
+
+  post?: PostResponseDto;
 
   createdAt: Date;
 

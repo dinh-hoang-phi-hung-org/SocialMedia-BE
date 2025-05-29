@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { CommentController } from './presentation/controller/comment.controller';
 import { PostCommentUseCase } from './application/use-cases/post-comment.use-case';
 import { CommentRepository } from './infrastructure/repositories/comment.repository';
@@ -11,8 +11,10 @@ import { GetCommentByPostUuidAndParentUuidUseCase } from './application/use-case
 import { StorageModule } from '@/modules/storage/storage.module';
 import { UpdateCommentToCreateUseCase } from '@/modules/comment/application/use-cases/update-comment-to-create.use-case';
 import { DeleteCommentUseCase } from '@/modules/comment/application/use-cases/delete-comment.use-case';
+import { PostMapper } from '@/modules/posts/application/mapper/post.mapper';
+import { PostsModule } from '../posts/posts.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([CommentOrmEntity]), StorageModule],
+  imports: [TypeOrmModule.forFeature([CommentOrmEntity]), StorageModule, forwardRef(() => PostsModule)],
   controllers: [CommentController],
   providers: [
     PostCommentUseCase,
@@ -21,6 +23,7 @@ import { DeleteCommentUseCase } from '@/modules/comment/application/use-cases/de
     GetCommentByPostUuidAndParentUuidUseCase,
     CommentMapper,
     UserMapper,
+    PostMapper,
     DeleteCommentUseCase,
     UpdateCommentToCreateUseCase,
     {
@@ -28,6 +31,6 @@ import { DeleteCommentUseCase } from '@/modules/comment/application/use-cases/de
       useExisting: CommentRepository,
     },
   ],
-  exports: [CommentRepository, TypeOrmModule.forFeature([CommentOrmEntity]), 'ICommentRepository'],
+  exports: [CommentRepository, TypeOrmModule.forFeature([CommentOrmEntity]), 'ICommentRepository', CommentMapper],
 })
 export class CommentModule {}

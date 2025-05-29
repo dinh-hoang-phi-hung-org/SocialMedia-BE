@@ -13,6 +13,7 @@ import { PostsModule } from './modules/posts/posts.module';
 import { MessageModule } from './modules/message/message.module';
 import { SocketModule } from './modules/socket/socket.module';
 import { CommentModule } from './modules/comment/comment.module';
+import { ReportModule } from './modules/report/report.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CommentModule } from './modules/comment/comment.module';
     SocketModule,
     StorageModule,
     CommentModule,
+    ReportModule,
   ],
 })
 export class AppModule implements OnModuleInit {

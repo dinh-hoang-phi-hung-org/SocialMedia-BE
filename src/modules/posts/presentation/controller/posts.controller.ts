@@ -153,8 +153,12 @@ export class PostsController {
   @Get(':uuid')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
-  async getPost(@Param('uuid') uuid: string): Promise<ApiSuccessResponse<PostResponseDto>> {
-    const post = await this.getPostByUuidUseCase.execute(uuid);
+  async getPost(
+    @Param('uuid') uuid: string,
+    @GetUser() currentUser: { uuid: string; role: string },
+  ): Promise<ApiSuccessResponse<PostResponseDto>> {
+    const isAdmin = currentUser.role === UserRole.ADMIN;
+    const post = await this.getPostByUuidUseCase.execute(uuid, isAdmin);
     return new ApiSuccessResponse(this.postMapper.toDTO(post));
   }
 

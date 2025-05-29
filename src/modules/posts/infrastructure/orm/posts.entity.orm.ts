@@ -20,4 +20,7 @@ export class PostOrmEntity extends BaseOrmEntity {
   @ManyToOne(() => UserOrmEntity, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_uuid', referencedColumnName: 'uuid' })
   user: UserOrmEntity;
+
+  @Column({ name: 'is_deleted', default: false })
+  isDeleted: boolean;
 }

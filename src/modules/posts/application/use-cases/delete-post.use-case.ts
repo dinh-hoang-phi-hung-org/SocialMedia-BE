@@ -9,7 +9,6 @@ export class DeletePostUseCase {
   ) {}
 
   async execute(postUuid: string): Promise<void> {
-    console.log('postUuid', postUuid);
-    await this.postRepository.delete(postUuid);
+    await this.postRepository.softDelete(postUuid, 'isDeleted', true);
   }
 }

@@ -47,7 +47,7 @@ export class CommentRepository extends AbstractRepository<CommentOrmEntity> impl
       order: orderBy,
       skip,
       take: limit,
-      relations: ['user'],
+      relations: ['user', 'post'],
     });
     const lastPage = Math.ceil(total / limit);
     return {
@@ -85,7 +85,7 @@ export class CommentRepository extends AbstractRepository<CommentOrmEntity> impl
       order: orderBy,
       skip,
       take: limit,
-      relations: ['user'],
+      relations: ['user', 'post'],
     });
     const lastPage = Math.ceil(total / limit);
     return {
@@ -125,7 +125,7 @@ export class CommentRepository extends AbstractRepository<CommentOrmEntity> impl
   async findByUuid(uuid: string): Promise<CommentOrmEntity> {
     const comment = await this.commentRepository.findOne({
       where: { uuid },
-      relations: ['user'],
+      relations: ['user', 'post'],
     });
     if (!comment) {
       throw new NotFoundException(`Comment with UUID ${uuid} not found`);
@@ -147,6 +147,12 @@ export class CommentRepository extends AbstractRepository<CommentOrmEntity> impl
   async update(uuid: string, entity: CommentOrmEntity): Promise<CommentOrmEntity> {
     await this.findByUuid(uuid); // Verify post exists
     await this.commentRepository.update({ uuid }, entity);
+    return this.findByUuid(uuid);
+  }
+
+  async updateField(uuid: string, field: string, value: any): Promise<CommentOrmEntity> {
+    await this.findByUuid(uuid); // Verify post exists
+    await this.commentRepository.update({ uuid }, { [field]: value });
     return this.findByUuid(uuid);
   }
 

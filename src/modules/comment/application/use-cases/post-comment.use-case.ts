@@ -19,6 +19,7 @@ export class PostCommentUseCase {
       newComment.parentUuid = parentUuid;
     }
     const comment = await this.commentRepository.create(newComment);
-    return comment;
+    const commentResponse = this.commentRepository.findByUuid(comment.uuid);
+    return commentResponse;
   }
 }

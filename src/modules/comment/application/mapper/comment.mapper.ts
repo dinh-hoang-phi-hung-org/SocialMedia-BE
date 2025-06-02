@@ -23,6 +23,7 @@ export class CommentMapper {
         ? (Object(comment.mediaUrl) as { images: MediaFile[]; videos: MediaFile[] })
         : undefined,
       post: comment.post ? this.postMapper.toDTO(comment.post) : undefined,
+      childrenCount: (comment as any).childrenCount || 0,
     };
   }
 

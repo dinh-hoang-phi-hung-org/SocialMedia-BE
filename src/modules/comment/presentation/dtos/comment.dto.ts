@@ -40,4 +40,7 @@ export class CommentResponseDto {
     images: MediaFile[];
     videos: MediaFile[];
   };
+
+  @ApiProperty({ description: 'The number of children comments' })
+  childrenCount?: number;
 }

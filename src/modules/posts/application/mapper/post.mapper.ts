@@ -17,6 +17,7 @@ export class PostMapper {
       mediaUrl: post.mediaUrl ? (Object(post.mediaUrl) as { images: MediaFile[]; videos: MediaFile[] }) : undefined,
       createdAt: post.createdAt,
       user: post.user ? this.userMapper.toShortcutDTO(post.user) : undefined,
+      commentsCount: (post as any).commentsCount || (post as any).comments?.length || 0,
     };
   }
 

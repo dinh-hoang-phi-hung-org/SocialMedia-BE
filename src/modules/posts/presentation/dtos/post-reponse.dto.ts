@@ -10,4 +10,5 @@ export class PostResponseDto {
   };
   createdAt: Date;
   user?: ShortcutUserResponseDto;
+  commentsCount: number;
 }

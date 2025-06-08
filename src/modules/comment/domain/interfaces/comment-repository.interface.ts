@@ -10,4 +10,5 @@ export interface ICommentRepository extends IBaseRepository<CommentOrmEntity> {
     parentUuid: string,
     query: SearchOptions,
   ): Promise<PaginatedResult<CommentOrmEntity>>;
+  findByField(field: string, value: string): Promise<CommentOrmEntity[]>;
 }

@@ -18,6 +18,15 @@ export class CommentRepository extends AbstractRepository<CommentOrmEntity> impl
       sortableFields: ['createdAt'],
     });
   }
+
+  async findByField(field: string, value: string): Promise<CommentOrmEntity[]> {
+    const comments = await this.commentRepository.find({
+      where: { [field]: value, isDeleted: false },
+      relations: ['user', 'post'],
+    });
+    return comments;
+  }
+
   async findAllByPostUuidAndParentUuid(
     postUuid: string,
     parentUuid: string,
@@ -32,6 +41,7 @@ export class CommentRepository extends AbstractRepository<CommentOrmEntity> impl
       } else {
         where = this.buildWhereConditions(this.options.searchableFields, searchValue || '');
       }
+      where = where.map((w) => ({ ...w, isDeleted: false, postUuid, parentUuid }));
     }
 
     let orderBy: FindOptionsOrder<CommentOrmEntity>;

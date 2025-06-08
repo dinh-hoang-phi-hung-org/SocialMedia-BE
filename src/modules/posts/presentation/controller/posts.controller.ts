@@ -36,6 +36,7 @@ import { GetPostByUuidUseCase } from '@/modules/posts/application/use-cases/get-
 import { AdjustUserPostsCountUseCase } from '@/modules/posts/application/use-cases/adjust-user-posts-count.use-case';
 import { UserRole } from '@/shared/enum/role';
 import { Roles } from '@/shared/decorators/roles.decorator';
+import { CommentRepository } from '@/modules/comment/infrastructure/repositories/comment.repository';
 @ApiTags('Posts')
 @Controller('posts')
 export class PostsController {
@@ -51,6 +52,7 @@ export class PostsController {
     private readonly getPostsByUuidUserUseCase: GetPostsByUuidUserUseCase,
     private readonly getPostByUuidUseCase: GetPostByUuidUseCase,
     private readonly postMapper: PostMapper,
+    private readonly commentRepository: CommentRepository,
   ) {}
 
   @Post()
@@ -159,7 +161,12 @@ export class PostsController {
   ): Promise<ApiSuccessResponse<PostResponseDto>> {
     const isAdmin = currentUser.role === UserRole.ADMIN;
     const post = await this.getPostByUuidUseCase.execute(uuid, isAdmin);
-    return new ApiSuccessResponse(this.postMapper.toDTO(post));
+
+    const comments = await this.commentRepository.findByField('postUuid', post.uuid);
+    const commentsCount = comments ? comments.length : 0;
+
+    const postWithCommentsCount = { ...post, commentsCount };
+    return new ApiSuccessResponse(this.postMapper.toDTO(postWithCommentsCount));
   }
 
   @Delete(':uuid')
@@ -197,6 +204,18 @@ export class PostsController {
       page,
       limit,
     });
-    return new ApiSuccessResponse(this.postMapper.toPaginatedDTO(post));
+    const postWithCommentsCount = await Promise.all(
+      post.data.map(async (post) => {
+        const commentsCount = await this.commentRepository.findByField('postUuid', post.uuid);
+        return { ...post, commentsCount: commentsCount.length || 0 };
+      }),
+    );
+
+    const updatedResult = {
+      ...post,
+      data: postWithCommentsCount,
+    };
+
+    return new ApiSuccessResponse(this.postMapper.toPaginatedDTO(updatedResult));
   }
 }

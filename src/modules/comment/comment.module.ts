@@ -13,6 +13,8 @@ import { UpdateCommentToCreateUseCase } from '@/modules/comment/application/use-
 import { DeleteCommentUseCase } from '@/modules/comment/application/use-cases/delete-comment.use-case';
 import { PostMapper } from '@/modules/posts/application/mapper/post.mapper';
 import { PostsModule } from '../posts/posts.module';
+import { GetCommentByUuidCommentUseCase } from './application/use-cases/get-comment-by-uuid-comment.use-case';
+import { CountNumberCommentChildrenUseCase } from './application/use-cases/count-number-comment-children.use-case';
 @Module({
   imports: [TypeOrmModule.forFeature([CommentOrmEntity]), StorageModule, forwardRef(() => PostsModule)],
   controllers: [CommentController],
@@ -26,6 +28,8 @@ import { PostsModule } from '../posts/posts.module';
     PostMapper,
     DeleteCommentUseCase,
     UpdateCommentToCreateUseCase,
+    GetCommentByUuidCommentUseCase,
+    CountNumberCommentChildrenUseCase,
     {
       provide: 'ICommentRepository',
       useExisting: CommentRepository,

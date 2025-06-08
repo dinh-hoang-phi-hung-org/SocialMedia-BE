@@ -31,6 +31,8 @@ import { FileType } from '@/shared/enum/file-type';
 import { UpdateCommentToCreateUseCase } from '../../application/use-cases/update-comment-to-create.use-case';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { DeleteCommentUseCase } from '../../application/use-cases/delete-comment.use-case';
+import { GetCommentByUuidCommentUseCase } from '../../application/use-cases/get-comment-by-uuid-comment.use-case';
+import { CountNumberCommentChildrenUseCase } from '../../application/use-cases/count-number-comment-children.use-case';
 @ApiTags('Comments')
 @Controller('comments')
 export class CommentController {
@@ -44,6 +46,8 @@ export class CommentController {
     private readonly storageService: StorageService,
     private readonly updateCommentToCreateUseCase: UpdateCommentToCreateUseCase,
     private readonly deleteCommentUseCase: DeleteCommentUseCase,
+    private readonly getCommentByUuidCommentUseCase: GetCommentByUuidCommentUseCase,
+    private readonly countNumberCommentChildrenUseCase: CountNumberCommentChildrenUseCase,
   ) {}
 
   @Post()
@@ -135,7 +139,18 @@ export class CommentController {
     });
   }
 
-  @Get(':uuid')
+  @Get('comment/:uuid')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @Roles(UserRole.USER)
+  async getCommentByUuid(@Param('uuid') uuid: string): Promise<ApiSuccessResponse<CommentResponseDto>> {
+    const result = await this.getCommentByUuidCommentUseCase.execute(uuid);
+    const childrenCount = await this.countNumberCommentChildrenUseCase.execute(result.uuid);
+    const commentWithChildren = { ...result, childrenCount };
+    return new ApiSuccessResponse(this.commentMapper.toDTO(commentWithChildren));
+  }
+
+  @Get('post/:uuid')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   @Roles(UserRole.USER)
@@ -153,10 +168,23 @@ export class CommentController {
       sortBy,
       sortDirection: sortDirection as SortDirection,
     });
-    return new ApiSuccessResponse(this.commentMapper.toPaginatedDTO(result));
+
+    const commentsWithChildren = await Promise.all(
+      result.data.map(async (comment) => {
+        const childrenCount = await this.countNumberCommentChildrenUseCase.execute(comment.uuid);
+        return { ...comment, childrenCount };
+      }),
+    );
+
+    const updatedResult = {
+      ...result,
+      data: commentsWithChildren,
+    };
+
+    return new ApiSuccessResponse(this.commentMapper.toPaginatedDTO(updatedResult));
   }
 
-  @Get(':uuid/:parentUuid')
+  @Get('post/:uuid/parent/:parentUuid')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   @Roles(UserRole.USER)
@@ -175,6 +203,19 @@ export class CommentController {
       sortBy,
       sortDirection: sortDirection as SortDirection,
     });
-    return new ApiSuccessResponse(this.commentMapper.toPaginatedDTO(result));
+
+    const commentsWithChildren = await Promise.all(
+      result.data.map(async (comment) => {
+        const childrenCount = await this.countNumberCommentChildrenUseCase.execute(comment.uuid);
+        return { ...comment, childrenCount };
+      }),
+    );
+
+    const updatedResult = {
+      ...result,
+      data: commentsWithChildren,
+    };
+
+    return new ApiSuccessResponse(this.commentMapper.toPaginatedDTO(updatedResult));
   }
 }

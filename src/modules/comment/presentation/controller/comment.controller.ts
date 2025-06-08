@@ -33,6 +33,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { DeleteCommentUseCase } from '../../application/use-cases/delete-comment.use-case';
 import { GetCommentByUuidCommentUseCase } from '../../application/use-cases/get-comment-by-uuid-comment.use-case';
 import { CountNumberCommentChildrenUseCase } from '../../application/use-cases/count-number-comment-children.use-case';
+import { ReactionRepository } from '@/modules/reactions/infrastructure/repository/reaction.repository';
 @ApiTags('Comments')
 @Controller('comments')
 export class CommentController {
@@ -48,6 +49,7 @@ export class CommentController {
     private readonly deleteCommentUseCase: DeleteCommentUseCase,
     private readonly getCommentByUuidCommentUseCase: GetCommentByUuidCommentUseCase,
     private readonly countNumberCommentChildrenUseCase: CountNumberCommentChildrenUseCase,
+    private readonly reactionRepository: ReactionRepository,
   ) {}
 
   @Post()
@@ -143,10 +145,15 @@ export class CommentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
   @Roles(UserRole.USER)
-  async getCommentByUuid(@Param('uuid') uuid: string): Promise<ApiSuccessResponse<CommentResponseDto>> {
+  async getCommentByUuid(
+    @Param('uuid') uuid: string,
+    @GetUser() user: { uuid: string },
+  ): Promise<ApiSuccessResponse<CommentResponseDto>> {
     const result = await this.getCommentByUuidCommentUseCase.execute(uuid);
     const childrenCount = await this.countNumberCommentChildrenUseCase.execute(result.uuid);
-    const commentWithChildren = { ...result, childrenCount };
+    const reactionsCount = await this.reactionRepository.findByField('commentUuid', result.uuid);
+    const isReacted = await this.reactionRepository.checkIsReacted(result.uuid, user.uuid, 'comment');
+    const commentWithChildren = { ...result, childrenCount, reactionsCount: reactionsCount.length, isReacted };
     return new ApiSuccessResponse(this.commentMapper.toDTO(commentWithChildren));
   }
 
@@ -157,6 +164,7 @@ export class CommentController {
   async getCommentsByPostUuid(
     @Param('uuid') uuid: string,
     @Query() searchDto: SearchDto,
+    @GetUser() user: { uuid: string },
   ): Promise<ApiSuccessResponse<PaginatedResult<CommentResponseDto>>> {
     const { searchFields, searchValue, page, limit, sortBy, sortDirection } = searchDto;
     const searchFieldsArray = searchFields ? searchFields.split(',').map((field) => field.trim()) : [];
@@ -172,7 +180,9 @@ export class CommentController {
     const commentsWithChildren = await Promise.all(
       result.data.map(async (comment) => {
         const childrenCount = await this.countNumberCommentChildrenUseCase.execute(comment.uuid);
-        return { ...comment, childrenCount };
+        const reactionsCount = await this.reactionRepository.findByField('commentUuid', comment.uuid);
+        const isReacted = await this.reactionRepository.checkIsReacted(comment.uuid, user.uuid, 'comment');
+        return { ...comment, childrenCount, reactionsCount: reactionsCount.length, isReacted };
       }),
     );
 

@@ -15,8 +15,9 @@ import { PostMapper } from '@/modules/posts/application/mapper/post.mapper';
 import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
 import { GetPostByUuidUseCase } from '@/modules/posts/application/use-cases/get-post-by-uuid.use-case';
 import { CommentModule } from '@/modules/comment/comment.module';
+import { ReactionsModule } from '@/modules/reactions/reactions.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([PostOrmEntity]), StorageModule, UsersModule, CommentModule],
+  imports: [TypeOrmModule.forFeature([PostOrmEntity]), StorageModule, UsersModule, CommentModule, ReactionsModule],
   controllers: [PostsController],
   providers: [
     PostRepository,

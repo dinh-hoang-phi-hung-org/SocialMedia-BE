@@ -37,6 +37,7 @@ import { AdjustUserPostsCountUseCase } from '@/modules/posts/application/use-cas
 import { UserRole } from '@/shared/enum/role';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { CommentRepository } from '@/modules/comment/infrastructure/repositories/comment.repository';
+import { ReactionRepository } from '@/modules/reactions/infrastructure/repository/reaction.repository';
 @ApiTags('Posts')
 @Controller('posts')
 export class PostsController {
@@ -53,6 +54,7 @@ export class PostsController {
     private readonly getPostByUuidUseCase: GetPostByUuidUseCase,
     private readonly postMapper: PostMapper,
     private readonly commentRepository: CommentRepository,
+    private readonly reactionRepository: ReactionRepository,
   ) {}
 
   @Post()
@@ -165,8 +167,12 @@ export class PostsController {
     const comments = await this.commentRepository.findByField('postUuid', post.uuid);
     const commentsCount = comments ? comments.length : 0;
 
-    const postWithCommentsCount = { ...post, commentsCount };
-    return new ApiSuccessResponse(this.postMapper.toDTO(postWithCommentsCount));
+    const reactions = await this.reactionRepository.findByField('postUuid', post.uuid);
+    const reactionsCount = reactions ? reactions.length : 0;
+    const isReacted = await this.reactionRepository.checkIsReacted(post.uuid, currentUser.uuid, 'post');
+
+    const postWithCommentsCountAndReactions = { ...post, commentsCount, reactionsCount, isReacted };
+    return new ApiSuccessResponse(this.postMapper.toDTO(postWithCommentsCountAndReactions));
   }
 
   @Delete(':uuid')
@@ -198,6 +204,7 @@ export class PostsController {
   async getPostsByUuidUser(
     @Param('uuid') uuid: string,
     @Query() searchDto: SearchDto,
+    @GetUser() currentUser: { uuid: string },
   ): Promise<ApiSuccessResponse<PaginatedResult<PostResponseDto>>> {
     const { page, limit } = searchDto;
     const post = await this.getPostsByUuidUserUseCase.execute(uuid, {
@@ -207,7 +214,14 @@ export class PostsController {
     const postWithCommentsCount = await Promise.all(
       post.data.map(async (post) => {
         const commentsCount = await this.commentRepository.findByField('postUuid', post.uuid);
-        return { ...post, commentsCount: commentsCount.length || 0 };
+        const reactionsCount = await this.reactionRepository.findByField('postUuid', post.uuid);
+        const isReacted = await this.reactionRepository.checkIsReacted(post.uuid, currentUser.uuid, 'post');
+        return {
+          ...post,
+          commentsCount: commentsCount.length || 0,
+          reactionsCount: reactionsCount.length || 0,
+          isReacted,
+        };
       }),
     );
 

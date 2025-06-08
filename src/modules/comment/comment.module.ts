@@ -15,8 +15,14 @@ import { PostMapper } from '@/modules/posts/application/mapper/post.mapper';
 import { PostsModule } from '../posts/posts.module';
 import { GetCommentByUuidCommentUseCase } from './application/use-cases/get-comment-by-uuid-comment.use-case';
 import { CountNumberCommentChildrenUseCase } from './application/use-cases/count-number-comment-children.use-case';
+import { ReactionsModule } from '@/modules/reactions/reactions.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([CommentOrmEntity]), StorageModule, forwardRef(() => PostsModule)],
+  imports: [
+    TypeOrmModule.forFeature([CommentOrmEntity]),
+    StorageModule,
+    forwardRef(() => PostsModule),
+    ReactionsModule,
+  ],
   controllers: [CommentController],
   providers: [
     PostCommentUseCase,

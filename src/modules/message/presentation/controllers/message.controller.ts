@@ -82,7 +82,7 @@ export class MessageController {
           description: 'Media files to upload (up to 10 images and 3 videos, optional)',
         },
       },
-      required: [],
+      required: ['receiverUuid', 'content'],
     },
   })
   @UseInterceptors(FilesInterceptor('files', 13))
@@ -96,7 +96,9 @@ export class MessageController {
       }),
     ) // eslint-disable-next-line @typescript-eslint/no-explicit-any
     files: Array<any>,
-  ): Promise<ApiSuccessResponse<{ message: string }> | ApiFailureResponse<{ message: string }>> {
+  ): Promise<
+    ApiSuccessResponse<{ message: string; conversationUuid: string }> | ApiFailureResponse<{ message: string }>
+  > {
     if (files && files.length > 0) {
       const imageFiles = files.filter((file) => this.storageService.getMediaType(file.mimetype) === FileType.IMAGE);
       const videoFiles = files.filter((file) => this.storageService.getMediaType(file.mimetype) === FileType.VIDEO);
@@ -106,22 +108,6 @@ export class MessageController {
       }
       if (videoFiles.length > this.MAX_VIDEOS) {
         throw new BadRequestException(`Maximum ${this.MAX_VIDEOS} videos are allowed`);
-      }
-    }
-
-    if (messageDto.conversationUuid === '') {
-      const isExistConversation = await this.findUuidConversationUseCase.execute(user.uuid, messageDto.receiverUuid);
-      if (isExistConversation) {
-        messageDto.conversationUuid = isExistConversation.uuid;
-      } else {
-        const conversation = await this.createConversationUseCase.execute(false, '');
-        messageDto.conversationUuid = conversation.uuid;
-        if (user.uuid !== messageDto.receiverUuid) {
-          await this.createUserConversationUseCase.execute(conversation.uuid, user.uuid);
-          await this.createUserConversationUseCase.execute(conversation.uuid, messageDto.receiverUuid);
-        } else {
-          await this.createUserConversationUseCase.execute(conversation.uuid, user.uuid);
-        }
       }
     }
 
@@ -144,14 +130,41 @@ export class MessageController {
         throw new BadRequestException(`Failed to upload files: ${error.message}`);
       }
     }
+
+    // Xác định xem có phải conversation mới không
+    let isNewConversation = false;
+
+    if (!messageDto.conversationUuid) {
+      const isExistConversation = await this.findUuidConversationUseCase.execute(user.uuid, messageDto.receiverUuid);
+      if (isExistConversation) {
+        messageDto.conversationUuid = isExistConversation.uuid;
+        isNewConversation = false;
+      } else {
+        const conversation = await this.createConversationUseCase.execute(false, '');
+        messageDto.conversationUuid = conversation.uuid;
+        isNewConversation = true;
+
+        if (user.uuid !== messageDto.receiverUuid) {
+          await this.createUserConversationUseCase.execute(conversation.uuid, user.uuid);
+          await this.createUserConversationUseCase.execute(conversation.uuid, messageDto.receiverUuid);
+        } else {
+          await this.createUserConversationUseCase.execute(conversation.uuid, user.uuid);
+        }
+      }
+    }
+
     const message = await this.sendMessageUseCase.execute(
       messageDto.conversationUuid,
       user.uuid,
       messageDto.content,
       mediaObject,
+      isNewConversation,
     );
     if (message) {
-      return new ApiSuccessResponse({ message: 'Message sent successfully' });
+      return new ApiSuccessResponse({
+        message: 'Message sent successfully',
+        conversationUuid: messageDto.conversationUuid,
+      });
     }
     return new ApiFailureResponse(['Failed to send message']);
   }

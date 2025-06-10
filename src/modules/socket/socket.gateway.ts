@@ -89,10 +89,20 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   }
 
   @SubscribeMessage('typing')
-  handleTyping(client: Socket, payload: { conversationId: string; userId: string; isTyping: boolean }) {
+  handleTyping(
+    client: Socket,
+    payload: { conversationId: string; userId: string; username?: string; isTyping: boolean },
+  ) {
+    this.logger.log(
+      `User ${payload.userId} typing status: ${payload.isTyping} in conversation: ${payload.conversationId}`,
+    );
+
+    // Emit typing status to all other users in the conversation (exclude sender)
     client.to(payload.conversationId).emit('userTyping', {
       userId: payload.userId,
+      username: payload.username || 'Unknown User',
       isTyping: payload.isTyping,
+      conversationId: payload.conversationId,
     });
   }
 

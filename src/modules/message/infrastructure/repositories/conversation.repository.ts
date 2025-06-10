@@ -32,24 +32,49 @@ export class ConversationRepository
     });
   }
 
-  async getUuidParticipantByUuidConversation(uuidConversation: string, userId: string): Promise<string | null> {
-    const result = await this.userConversationRepository.findOne({
+  async getUuidParticipantByUuidConversation(uuidConversation: string, userId: string): Promise<string[]> {
+    const result = await this.userConversationRepository.find({
       where: { conversationUuid: uuidConversation, userUuid: Not(userId) },
     });
-    return result ? result.userUuid : null;
+    return result.map((uc) => uc.userUuid);
   }
   async findByUuids(uuids: string[]): Promise<ConversationOrmEntity[]> {
     return this.conversationRepository.find({ where: { uuid: In(uuids) }, order: { updatedAt: 'DESC' } });
   }
 
   async getUuidByUsers(senderId: string, receiverId: string): Promise<ConversationOrmEntity | null> {
+    if (senderId === receiverId) {
+      const queryBuilder = this.userConversationRepository
+        .createQueryBuilder('uc')
+        .innerJoinAndSelect('uc.conversation', 'conversation')
+        .where('uc.user_uuid = :userId', { userId: senderId })
+        .andWhere('conversation.is_group_chat = :isGroupChat', { isGroupChat: false });
+
+      const userConversations = await queryBuilder.getMany();
+
+      for (const userConv of userConversations) {
+        const participantCount = await this.userConversationRepository.count({
+          where: { conversationUuid: userConv.conversationUuid },
+        });
+
+        if (participantCount === 1) {
+          return userConv.conversation;
+        }
+      }
+
+      return null;
+    }
+
     const queryBuilder = this.userConversationRepository
       .createQueryBuilder('uc1')
       .innerJoin(UserConversation, 'uc2', 'uc1.conversation_uuid = uc2.conversation_uuid')
       .innerJoinAndSelect('uc1.conversation', 'conversation')
-      .where('uc1.user_uuid = :senderId', { senderId })
-      .andWhere('uc2.user_uuid = :receiverId', { receiverId })
-      .andWhere('conversation.is_group_chat = :isGroupChat', { isGroupChat: false });
+      .where('conversation.is_group_chat = :isGroupChat', { isGroupChat: false })
+      .andWhere('uc1.user_uuid != uc2.user_uuid') // Ensure different users
+      .andWhere(
+        '((uc1.user_uuid = :senderId AND uc2.user_uuid = :receiverId) OR (uc1.user_uuid = :receiverId AND uc2.user_uuid = :senderId))',
+        { senderId, receiverId },
+      );
 
     const result = await queryBuilder.getOne();
 

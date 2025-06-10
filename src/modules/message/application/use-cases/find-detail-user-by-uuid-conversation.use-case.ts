@@ -11,13 +11,15 @@ export class FindDetailUserByUuidConversationUseCase {
   ) {}
 
   async execute(uuidConversation: string, userId: string): Promise<ShortcutUserResponseDto> {
-    const uuidParticipant = await this.conversationRepository.getUuidParticipantByUuidConversation(
+    const uuidParticipants = await this.conversationRepository.getUuidParticipantByUuidConversation(
       uuidConversation,
       userId,
     );
-    if (!uuidParticipant) {
+    if (!uuidParticipants || uuidParticipants.length === 0) {
       throw new NotFoundException('User not found');
     }
+
+    const uuidParticipant = uuidParticipants[0];
     const user = await this.userRepository.findByUuid(uuidParticipant);
     return {
       uuid: user.uuid,

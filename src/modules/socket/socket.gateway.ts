@@ -21,9 +21,39 @@ interface MessageDto {
   content: string;
 }
 
+// Video call interfaces
+interface VideoCallInitiateDto {
+  callerId: string;
+  callerName: string;
+  receiverId: string;
+  conversationId: string;
+  callType: 'video' | 'audio';
+}
+
+interface VideoCallResponseDto {
+  callId: string;
+  accepted: boolean;
+  receiverId: string;
+}
+
+interface VideoCallEndDto {
+  callId: string;
+  participantId: string;
+}
+
+interface WebRTCSignalDto {
+  callId: string;
+  signal: any; // WebRTC signal data
+  from: string;
+  to: string;
+}
+
 @WebSocketGateway({
   cors: {
-    origin: '*',
+    credentials: true,
+    methods: ['GET', 'POST'],
+    // Temporarily allow all origins for debugging
+    origin: true,
   },
   namespace: 'chat',
 })
@@ -31,6 +61,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   @WebSocketServer() server: Server;
   private logger = new Logger('SocketGateway');
   private userSocketMap = new Map<string, string>(); // userUuid -> socketId
+  private activeCalls = new Map<string, { callerId: string; receiverId: string; callType: string; status: string }>(); // callId -> call info
 
   constructor(private readonly redisService: RedisService) {}
 
@@ -106,6 +137,173 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     });
   }
 
+  // ===== VIDEO CALL EVENTS =====
+
+  @SubscribeMessage('initiateVideoCall')
+  handleInitiateVideoCall(client: Socket, payload: VideoCallInitiateDto) {
+    const callId = `call_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+    this.logger.log(`Video call initiated: ${callId} from ${payload.callerId} to ${payload.receiverId}`);
+
+    // Store call information
+    this.activeCalls.set(callId, {
+      callerId: payload.callerId,
+      receiverId: payload.receiverId,
+      callType: payload.callType,
+      status: 'ringing',
+    });
+
+    // Send incoming call notification to receiver
+    this.sendToUser(payload.receiverId, 'incomingVideoCall', {
+      callId,
+      callerId: payload.callerId,
+      callerName: payload.callerName,
+      conversationId: payload.conversationId,
+      callType: payload.callType,
+    });
+
+    // Send call initiated confirmation to caller
+    client.emit('videoCallInitiated', { callId, status: 'ringing' });
+
+    return { callId, status: 'initiated' };
+  }
+
+  @SubscribeMessage('answerVideoCall')
+  handleAnswerVideoCall(client: Socket, payload: VideoCallResponseDto) {
+    const call = this.activeCalls.get(payload.callId);
+
+    if (!call) {
+      client.emit('videoCallError', { message: 'Call not found' });
+      return;
+    }
+
+    this.logger.log(
+      `Video call ${payload.callId} ${payload.accepted ? 'accepted' : 'rejected'} by ${payload.receiverId}`,
+    );
+
+    if (payload.accepted) {
+      // Update call status
+      this.activeCalls.set(payload.callId, { ...call, status: 'connected' });
+
+      // Notify caller that call was accepted
+      this.sendToUser(call.callerId, 'videoCallAccepted', {
+        callId: payload.callId,
+        receiverId: payload.receiverId,
+        receiverName: 'Unknown', // Add receiver name - should come from user data in production
+      });
+
+      // Confirm to receiver
+      client.emit('videoCallAccepted', {
+        callId: payload.callId,
+        callerId: call.callerId,
+        callerName: 'Unknown', // Add caller name - should come from user data in production
+      });
+    } else {
+      // Call rejected
+      this.activeCalls.delete(payload.callId);
+
+      // Notify caller that call was rejected
+      this.sendToUser(call.callerId, 'videoCallRejected', {
+        callId: payload.callId,
+        receiverId: payload.receiverId,
+      });
+    }
+
+    return { status: payload.accepted ? 'accepted' : 'rejected' };
+  }
+
+  @SubscribeMessage('receiverReady')
+  handleReceiverReady(client: Socket, payload: { callId: string; receiverId: string }) {
+    const call = this.activeCalls.get(payload.callId);
+
+    if (!call) {
+      this.logger.error(`❌ Call not found for receiverReady: ${payload.callId}`);
+      client.emit('videoCallError', { message: 'Call not found' });
+      return;
+    }
+
+    this.logger.log(`🎯 Receiver ${payload.receiverId} is ready for call ${payload.callId}`);
+    this.logger.log(`🎯 Forwarding receiverReady to caller: ${call.callerId}`);
+
+    // Notify caller that receiver is ready to proceed with WebRTC negotiation
+    this.sendToUser(call.callerId, 'receiverReady', {
+      callId: payload.callId,
+      receiverId: payload.receiverId,
+    });
+
+    this.logger.log(`✅ ReceiverReady signal sent to caller successfully`);
+    return { status: 'receiver_ready' };
+  }
+
+  @SubscribeMessage('endVideoCall')
+  handleEndVideoCall(client: Socket, payload: VideoCallEndDto) {
+    const call = this.activeCalls.get(payload.callId);
+
+    if (!call) {
+      return;
+    }
+
+    this.logger.log(`Video call ${payload.callId} ended by ${payload.participantId}`);
+
+    // Notify other participant
+    const otherParticipant = payload.participantId === call.callerId ? call.receiverId : call.callerId;
+    this.sendToUser(otherParticipant, 'videoCallEnded', {
+      callId: payload.callId,
+      endedBy: payload.participantId,
+    });
+
+    // Remove call from active calls
+    this.activeCalls.delete(payload.callId);
+
+    return { status: 'ended' };
+  }
+
+  @SubscribeMessage('webrtcSignal')
+  handleWebRTCSignal(client: Socket, payload: WebRTCSignalDto) {
+    this.logger.log(`WebRTC signal for call ${payload.callId} from ${payload.from} to ${payload.to}`);
+
+    // Forward WebRTC signal to the target user
+    this.sendToUser(payload.to, 'webrtcSignal', {
+      callId: payload.callId,
+      signal: payload.signal,
+      from: payload.from,
+    });
+  }
+
+  @SubscribeMessage('webrtcOffer')
+  handleWebRTCOffer(client: Socket, payload: WebRTCSignalDto) {
+    this.logger.log(`WebRTC offer for call ${payload.callId} from ${payload.from} to ${payload.to}`);
+
+    this.sendToUser(payload.to, 'webrtcOffer', {
+      callId: payload.callId,
+      offer: payload.signal,
+      from: payload.from,
+    });
+  }
+
+  @SubscribeMessage('webrtcAnswer')
+  handleWebRTCAnswer(client: Socket, payload: any) {
+    this.logger.log(`📨 WebRTC answer received for call ${payload.callId} from ${payload.from} to ${payload.to}`);
+    this.logger.log(`📨 Answer type: ${payload.answer?.type}, SDP length: ${payload.answer?.sdp?.length || 0}`);
+
+    this.sendToUser(payload.to, 'webrtcAnswer', {
+      callId: payload.callId,
+      answer: payload.answer,
+      from: payload.from,
+    });
+  }
+
+  @SubscribeMessage('webrtcIceCandidate')
+  handleWebRTCIceCandidate(client: Socket, payload: WebRTCSignalDto) {
+    this.logger.log(`WebRTC ICE candidate for call ${payload.callId} from ${payload.from} to ${payload.to}`);
+
+    this.sendToUser(payload.to, 'webrtcIceCandidate', {
+      callId: payload.callId,
+      candidate: payload.signal,
+      from: payload.from,
+    });
+  }
+
   // Method to be called from other services
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendToUser(userId: string, event: string, data: any) {
@@ -130,5 +328,10 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     } else {
       this.server.to(conversationId).emit(event, data);
     }
+  }
+
+  // Get active calls for debugging
+  getActiveCalls() {
+    return Array.from(this.activeCalls.entries());
   }
 }

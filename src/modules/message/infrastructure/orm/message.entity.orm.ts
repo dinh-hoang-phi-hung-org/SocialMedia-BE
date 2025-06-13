@@ -2,6 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ConversationOrmEntity } from './conversation.entity.orm';
 import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.orm';
 import { BaseOrmEntity } from '@/shared/infrastructure/orm/base-orm.entity';
+import { MessageType } from '@/shared/enum/message-type';
 
 @Entity('messages')
 export class MessageOrmEntity extends BaseOrmEntity {
@@ -25,4 +26,7 @@ export class MessageOrmEntity extends BaseOrmEntity {
   @ManyToOne(() => UserOrmEntity, (user) => user.messages)
   @JoinColumn({ name: 'sender_uuid', referencedColumnName: 'uuid' })
   sender: UserOrmEntity;
+
+  @Column({ name: 'type', type: 'enum', enum: MessageType, nullable: true })
+  type: MessageType;
 }

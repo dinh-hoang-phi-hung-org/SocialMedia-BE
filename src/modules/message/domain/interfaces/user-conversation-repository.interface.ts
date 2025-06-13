@@ -5,4 +5,5 @@ import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 
 export interface IUserConversationRepository extends IBaseRepository<UserConversation> {
   getUserConversations(userId: string, query: SearchOptions): Promise<PaginatedResult<UserConversation>>;
+  findByUuidConversationAndUserUuid(conversationUuid: string, userUuid: string): Promise<UserConversation | null>;
 }

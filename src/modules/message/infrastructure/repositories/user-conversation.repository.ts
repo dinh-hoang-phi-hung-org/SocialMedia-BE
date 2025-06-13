@@ -21,6 +21,14 @@ export class UserConversationRepository
       sortableFields: ['createdAt'],
     });
   }
+  async findByUuidConversationAndUserUuid(
+    conversationUuid: string,
+    userUuid: string,
+  ): Promise<UserConversation | null> {
+    return this.userConversationRepository.findOne({
+      where: { conversationUuid, userUuid },
+    }) as Promise<UserConversation | null>;
+  }
 
   async getUserConversations(userId: string, query: SearchOptions): Promise<PaginatedResult<UserConversation>> {
     const { searchFields, searchValue, page, limit, sortBy, sortDirection } = query;

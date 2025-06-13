@@ -8,5 +8,5 @@ export interface IMessageRepository extends IBaseRepository<MessageOrmEntity> {
     conversationUuid: string,
     query: SearchOptions,
   ): Promise<PaginatedResult<MessageOrmEntity>>;
-  getLastMessageAndLastTime(conversationUuid: string): Promise<MessageOrmEntity>;
+  getLastMessageAndLastTime(conversationUuid: string): Promise<MessageOrmEntity | null>;
 }

@@ -13,6 +13,7 @@ export class GetConversationsUseCase {
 
   async execute(userId: string, query: SearchOptions): Promise<PaginatedResult<ConversationOrmEntity>> {
     const userConversations = await this.userConversationRepository.getUserConversations(userId, query);
+    console.log(userConversations);
     const conversationUuids = userConversations.data.map((userConversation) => userConversation.conversationUuid);
     const conversations = await this.conversationRepository.findByUuids(conversationUuids);
     return {

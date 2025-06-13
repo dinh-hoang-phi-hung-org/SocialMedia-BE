@@ -4,7 +4,7 @@ import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.o
 import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 import { SearchOptions } from '@/shared/types/search-options';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, FindOptionsOrder, SortDirection } from 'typeorm';
+import { Repository, FindOptionsWhere, FindOptionsOrder, SortDirection, Not } from 'typeorm';
 import { AbstractRepository } from '@/shared/repositories/abstract.repository';
 import { UserRole } from '@/shared/enum/role';
 @Injectable()
@@ -27,6 +27,44 @@ export class UserRepository extends AbstractRepository<UserOrmEntity> implements
         'last_login',
       ],
     });
+  }
+  async getUserWithoutMe(userId: string, query: SearchOptions): Promise<PaginatedResult<UserOrmEntity>> {
+    const { searchFields, searchValue, page, limit, sortBy, sortDirection } = query;
+
+    let where: FindOptionsWhere<UserOrmEntity>[] = [{ role: UserRole.USER, uuid: Not(userId) }];
+    if (searchFields && searchFields.length > 0) {
+      if (!searchFields.includes('all')) {
+        this.validateSearchFields(searchFields);
+        where = this.buildWhereConditions(searchFields, searchValue || '');
+      } else {
+        where = this.buildWhereConditions(this.options.searchableFields, searchValue || '');
+      }
+    }
+
+    let orderBy: FindOptionsOrder<UserOrmEntity>;
+    if (sortBy && sortBy != '') {
+      orderBy = { [sortBy]: sortDirection as unknown as SortDirection };
+    } else {
+      orderBy = { createdAt: 'DESC' };
+    }
+
+    const skip = (page - 1) * limit;
+    const [users, total] = await this.userRepository.findAndCount({
+      where: where,
+      skip,
+      take: limit,
+      order: orderBy,
+    });
+
+    const lastPage = Math.ceil(total / limit);
+    return {
+      data: users,
+      meta: {
+        total,
+        page,
+        lastPage,
+      },
+    };
   }
 
   async create(entity: UserOrmEntity): Promise<UserOrmEntity> {

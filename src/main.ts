@@ -21,9 +21,23 @@ async function bootstrap() {
 
     app.useWebSocketAdapter(new IoAdapter(app));
 
+    // const frontendDomain = configService.get('app.frontendDomain', { infer: true }) || 'http://localhost:3000';
+
     app.enableCors({
-      origin: configService.getOrThrow('app.frontendDomain', { infer: true }),
+      origin: true, // Temporarily allow all origins for debugging
       credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'Cache-Control',
+        'X-File-Name',
+      ],
+      optionsSuccessStatus: 200,
+      preflightContinue: false,
     });
 
     app

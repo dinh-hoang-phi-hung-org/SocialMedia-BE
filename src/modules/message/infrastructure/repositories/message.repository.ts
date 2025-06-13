@@ -18,14 +18,14 @@ export class MessageRepository extends AbstractRepository<MessageOrmEntity> impl
       sortableFields: ['createdAt'],
     });
   }
-  async getLastMessageAndLastTime(conversationUuid: string): Promise<MessageOrmEntity> {
+  async getLastMessageAndLastTime(conversationUuid: string): Promise<MessageOrmEntity | null> {
     const message = await this.messageRepository.findOne({
       where: { conversationUuid },
       order: { createdAt: 'DESC' },
       relations: ['sender'],
     });
     if (!message) {
-      throw new NotFoundException('Message not found');
+      return null;
     }
     return message;
   }

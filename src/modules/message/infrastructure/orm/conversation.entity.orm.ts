@@ -19,4 +19,10 @@ export class ConversationOrmEntity extends BaseOrmEntity {
 
   @OneToMany(() => MessageOrmEntity, (message) => message.conversation)
   messages: MessageOrmEntity[];
+
+  @Column({ name: 'admin_uuid', nullable: true })
+  adminUuid: string;
+
+  @Column({ name: 'group_picture_url', nullable: true })
+  groupPictureUrl: string;
 }

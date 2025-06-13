@@ -14,6 +14,8 @@ import { Roles } from '@/shared/decorators/roles.decorator';
 import { UserRole } from '@/shared/enum/role';
 import { GetUser } from '@/shared/decorators/get-user.decorator';
 import { GetMeUseCase } from '@/modules/users/application/use-cases/get-me.use-case';
+import { GetUserWithoutMeUseCase } from '@/modules/users/application/use-cases/get-user-without-me.use-case';
+import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.orm';
 @ApiTags('Users')
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -23,13 +25,17 @@ export class UsersController {
     private readonly getUsersUseCase: GetUsersUseCase,
     private readonly getUserByUuidUseCase: GetUserByUuidUseCase,
     private readonly getMeUseCase: GetMeUseCase,
+    private readonly getUserWithoutMeUseCase: GetUserWithoutMeUseCase,
   ) {}
 
   @Get()
   @ApiBearerAuth('access-token')
   @Roles(UserRole.ADMIN, UserRole.USER)
   @ApiOperation({ summary: 'Get all users with pagination and search' })
-  async getUsers(@Query() searchDto: SearchDto): Promise<ApiSuccessResponse<PaginatedResult<UserResponseDto>>> {
+  async getUsers(
+    @Query() searchDto: SearchDto,
+    @GetUser() currentUser: { uuid: string; role: UserRole },
+  ): Promise<ApiSuccessResponse<PaginatedResult<UserResponseDto>>> {
     const {
       searchFields,
       searchValue,
@@ -39,15 +45,27 @@ export class UsersController {
       sortDirection = SortDirection.DESC,
     } = searchDto;
     const searchFieldsArray = searchFields ? searchFields.split(',').map((field) => field.trim()) : [];
-    console.log(searchFieldsArray);
-    const result = await this.getUsersUseCase.execute({
-      searchFields: searchFieldsArray,
-      searchValue,
-      page,
-      limit,
-      sortBy,
-      sortDirection: sortDirection as SortDirection,
-    });
+    // console.log(searchFieldsArray);
+    let result: PaginatedResult<UserOrmEntity>;
+    if (currentUser.role === UserRole.USER) {
+      result = await this.getUserWithoutMeUseCase.execute(currentUser.uuid, {
+        searchFields: searchFieldsArray,
+        searchValue,
+        page,
+        limit,
+        sortBy,
+        sortDirection: sortDirection as SortDirection,
+      });
+    } else {
+      result = await this.getUsersUseCase.execute({
+        searchFields: searchFieldsArray,
+        searchValue,
+        page,
+        limit,
+        sortBy,
+        sortDirection: sortDirection as SortDirection,
+      });
+    }
 
     return new ApiSuccessResponse(this.userMapper.toPaginatedDTO(result));
   }

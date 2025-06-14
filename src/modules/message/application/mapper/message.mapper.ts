@@ -8,7 +8,7 @@ import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
 export class MessageMapper {
   constructor(private readonly userMapper: UserMapper) {}
 
-  toDTO(message: MessageOrmEntity, userUuid: string): MessageResponseDto {
+  toDTO(message: MessageOrmEntity, userUuid: string, isSeen?: boolean): MessageResponseDto {
     let mediaObject;
     if (message.mediaUrl) {
       try {
@@ -31,6 +31,8 @@ export class MessageMapper {
       content: message.content,
       mediaUrl: mediaObject,
       createdAt: message.createdAt,
+      isSeen: isSeen,
+      type: message.type,
     };
   }
 

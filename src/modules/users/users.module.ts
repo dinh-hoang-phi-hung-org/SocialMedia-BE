@@ -10,6 +10,7 @@ import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { FollowModule } from '@/modules/follow/follow.module';
 import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.entity.orm';
 import { GetMeUseCase } from './application/use-cases/get-me.use-case';
+import { GetUserWithoutMeUseCase } from './application/use-cases/get-user-without-me.use-case';
 @Module({
   imports: [TypeOrmModule.forFeature([UserOrmEntity, FollowOrmEntity]), forwardRef(() => FollowModule)],
   controllers: [UsersController],
@@ -19,6 +20,7 @@ import { GetMeUseCase } from './application/use-cases/get-me.use-case';
     GetUserByUuidUseCase,
     GetMeUseCase,
     UserRepository,
+    GetUserWithoutMeUseCase,
     JwtAuthGuard,
     {
       provide: 'IUserRepository',

@@ -32,24 +32,57 @@ export class ConversationRepository
     });
   }
 
-  async getUuidParticipantByUuidConversation(uuidConversation: string, userId: string): Promise<string | null> {
-    const result = await this.userConversationRepository.findOne({
+  async getUuidParticipantByUuidConversation(uuidConversation: string, userId: string): Promise<string[]> {
+    const result = await this.userConversationRepository.find({
       where: { conversationUuid: uuidConversation, userUuid: Not(userId) },
     });
-    return result ? result.userUuid : null;
+    return result.map((uc) => uc.userUuid);
   }
   async findByUuids(uuids: string[]): Promise<ConversationOrmEntity[]> {
-    return this.conversationRepository.find({ where: { uuid: In(uuids) }, order: { updatedAt: 'DESC' } });
+    return this.conversationRepository.find({
+      where: { uuid: In(uuids) },
+      relations: ['participants', 'participants.user'],
+      order: { updatedAt: 'DESC' },
+    });
   }
 
   async getUuidByUsers(senderId: string, receiverId: string): Promise<ConversationOrmEntity | null> {
+    if (senderId === receiverId) {
+      const queryBuilder = this.userConversationRepository
+        .createQueryBuilder('uc')
+        .innerJoinAndSelect('uc.conversation', 'conversation')
+        .leftJoinAndSelect('conversation.participants', 'participants')
+        .leftJoinAndSelect('participants.user', 'user')
+        .where('uc.user_uuid = :userId', { userId: senderId })
+        .andWhere('conversation.is_group_chat = :isGroupChat', { isGroupChat: false });
+
+      const userConversations = await queryBuilder.getMany();
+
+      for (const userConv of userConversations) {
+        const participantCount = await this.userConversationRepository.count({
+          where: { conversationUuid: userConv.conversationUuid },
+        });
+
+        if (participantCount === 1) {
+          return userConv.conversation;
+        }
+      }
+
+      return null;
+    }
+
     const queryBuilder = this.userConversationRepository
       .createQueryBuilder('uc1')
       .innerJoin(UserConversation, 'uc2', 'uc1.conversation_uuid = uc2.conversation_uuid')
       .innerJoinAndSelect('uc1.conversation', 'conversation')
-      .where('uc1.user_uuid = :senderId', { senderId })
-      .andWhere('uc2.user_uuid = :receiverId', { receiverId })
-      .andWhere('conversation.is_group_chat = :isGroupChat', { isGroupChat: false });
+      .leftJoinAndSelect('conversation.participants', 'participants')
+      .leftJoinAndSelect('participants.user', 'user')
+      .where('conversation.is_group_chat = :isGroupChat', { isGroupChat: false })
+      .andWhere('uc1.user_uuid != uc2.user_uuid') // Ensure different users
+      .andWhere(
+        '((uc1.user_uuid = :senderId AND uc2.user_uuid = :receiverId) OR (uc1.user_uuid = :receiverId AND uc2.user_uuid = :senderId))',
+        { senderId, receiverId },
+      );
 
     const result = await queryBuilder.getOne();
 
@@ -76,7 +109,10 @@ export class ConversationRepository
   }
 
   async findByUuid(uuid: string): Promise<ConversationOrmEntity> {
-    const conversation = await this.conversationRepository.findOne({ where: { uuid } });
+    const conversation = await this.conversationRepository.findOne({
+      where: { uuid },
+      relations: ['participants', 'participants.user'],
+    });
     if (!conversation) {
       throw new NotFoundException('Conversation not found');
     }
@@ -95,6 +131,10 @@ export class ConversationRepository
     await this.findByUuid(uuid);
     await this.conversationRepository.update({ uuid }, entity);
     return this.findByUuid(uuid);
+  }
+
+  async updateField(uuid: string, field: string, value: any): Promise<void> {
+    await this.conversationRepository.update({ uuid }, { [field]: value });
   }
 
   async delete(uuid: string): Promise<void> {

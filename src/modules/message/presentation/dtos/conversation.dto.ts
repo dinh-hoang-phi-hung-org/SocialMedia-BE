@@ -14,6 +14,19 @@ export class ConversationResponseDto {
   @IsString()
   @ApiProperty({ description: 'Conversation url' })
   conversationUrl?: string;
+
+  @IsString()
+  @ApiProperty({ description: 'Admin UUID' })
+  adminUuid?: string;
+
+  @ApiProperty({ description: 'Is group chat' })
+  isGroupChat?: boolean;
+
+  @ApiProperty({ description: 'Users in the conversation', type: [ShortcutUserResponseDto] })
+  users?: ShortcutUserResponseDto[];
+
+  @ApiProperty({ description: 'User' })
+  user?: ShortcutUserResponseDto;
 }
 
 export class GroupChatResponseDto {
@@ -25,18 +38,12 @@ export class GroupChatResponseDto {
   @ApiProperty({ description: 'Group chat title' })
   groupChatTitle: string;
 }
-
-export class ConversationsResponseDto {
-  @ApiProperty({ description: 'Conversations' })
-  conversations: ConversationResponseDto;
+export class UpdateConversationDto {
+  @IsString()
+  @ApiProperty({ description: 'Conversation UUID' })
+  conversationUuid: string;
 
   @IsString()
-  @ApiProperty({ description: 'Last message' })
-  lastMessage: MessageResponseDto;
-
-  @ApiProperty({ description: 'User' })
-  user?: ShortcutUserResponseDto;
-
-  @ApiProperty({ description: 'Group chat' })
-  groupChat?: GroupChatResponseDto;
+  @ApiProperty({ description: 'Conversation group picture URL' })
+  conversationGroupPictureUrl?: string;
 }

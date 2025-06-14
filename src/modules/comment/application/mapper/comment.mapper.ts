@@ -24,6 +24,8 @@ export class CommentMapper {
         : undefined,
       post: comment.post ? this.postMapper.toDTO(comment.post) : undefined,
       childrenCount: (comment as any).childrenCount || 0,
+      reactionsCount: (comment as any).reactionsCount || 0,
+      isReacted: (comment as any).isReacted || false,
     };
   }
 

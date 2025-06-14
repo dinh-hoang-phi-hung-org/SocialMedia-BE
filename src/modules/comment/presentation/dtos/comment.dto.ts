@@ -43,4 +43,10 @@ export class CommentResponseDto {
 
   @ApiProperty({ description: 'The number of children comments' })
   childrenCount?: number;
+
+  @ApiProperty({ description: 'The number of reactions' })
+  reactionsCount?: number;
+
+  @ApiProperty({ description: 'The number of reactions' })
+  isReacted?: boolean;
 }

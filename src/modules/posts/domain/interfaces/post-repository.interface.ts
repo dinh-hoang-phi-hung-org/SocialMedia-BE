@@ -4,5 +4,10 @@ import { SearchOptions } from '@/shared/types/search-options';
 import { PaginatedResult } from '@/shared/types/paginated-result.interface';
 export interface IPostRepository extends IBaseRepository<PostOrmEntity> {
   findAllByUuidUser(uuid: string, query: SearchOptions): Promise<PaginatedResult<PostOrmEntity>>;
-  softDelete(uuid: string, field: string, value: any): Promise<void>;
+  softDelete(uuid: string, field: string, value: unknown): Promise<void>;
+  findHomeFeedPosts(
+    followingUuids: string[],
+    currentUserUuid: string,
+    options: { page: number; limit: number; prioritizeFollowed: boolean },
+  ): Promise<PaginatedResult<PostOrmEntity>>;
 }

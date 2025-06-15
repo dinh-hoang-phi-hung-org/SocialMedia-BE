@@ -38,6 +38,8 @@ import { UserRole } from '@/shared/enum/role';
 import { Roles } from '@/shared/decorators/roles.decorator';
 import { CommentRepository } from '@/modules/comment/infrastructure/repositories/comment.repository';
 import { ReactionRepository } from '@/modules/reactions/infrastructure/repository/reaction.repository';
+import { GetHomeFeedUseCase } from '@/modules/posts/application/use-cases/get-home-feed.use-case';
+import { SortDirection } from '@/shared/enum/sort-direction';
 @ApiTags('Posts')
 @Controller('posts')
 export class PostsController {
@@ -55,6 +57,7 @@ export class PostsController {
     private readonly postMapper: PostMapper,
     private readonly commentRepository: CommentRepository,
     private readonly reactionRepository: ReactionRepository,
+    private readonly getHomeFeedUseCase: GetHomeFeedUseCase,
   ) {}
 
   @Post()
@@ -152,6 +155,48 @@ export class PostsController {
       message: 'Post created successfully',
       postUuid: newPost.uuid,
     });
+  }
+
+  @Get('/home')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @Roles(UserRole.USER)
+  @ApiOperation({
+    summary:
+      'Get home feed posts - posts from followed users are prioritized first, then posts from other users, and own posts are shown last',
+  })
+  async getHomeFeed(
+    @GetUser() currentUser: { uuid: string },
+    @Query() searchDto: SearchDto,
+  ): Promise<ApiSuccessResponse<PaginatedResult<PostResponseDto>>> {
+    console.log('abcdef', currentUser);
+    const { page, limit } = searchDto;
+    const posts = await this.getHomeFeedUseCase.execute(currentUser.uuid, {
+      page,
+      limit,
+      searchFields: [],
+      searchValue: '',
+      sortBy: 'createdAt',
+      sortDirection: SortDirection.DESC,
+    });
+
+    const postsWithCommentsCount = await Promise.all(
+      posts.data.map(async (post) => {
+        const comments = await this.commentRepository.findByField('postUuid', post.uuid);
+        const commentsCount = comments ? comments.length : 0;
+        const reactions = await this.reactionRepository.findByField('postUuid', post.uuid);
+        const reactionsCount = reactions ? reactions.length : 0;
+        const isReacted = await this.reactionRepository.checkIsReacted(post.uuid, currentUser.uuid, 'post');
+        return { ...post, commentsCount, reactionsCount, isReacted };
+      }),
+    );
+
+    const updatedResult = {
+      ...posts,
+      data: postsWithCommentsCount,
+    };
+
+    return new ApiSuccessResponse(this.postMapper.toPaginatedDTO(updatedResult));
   }
 
   @Get(':uuid')

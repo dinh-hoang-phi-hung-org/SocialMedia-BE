@@ -121,8 +121,71 @@ export class PostRepository extends AbstractRepository<PostOrmEntity> implements
     }
   }
 
-  async softDelete(uuid: string, field: string, value: any): Promise<void> {
+  async softDelete(uuid: string, field: string, value: unknown): Promise<void> {
     await this.findByUuid(uuid);
     await this.postRepository.update({ uuid }, { [field]: value });
+  }
+
+  async findHomeFeedPosts(
+    followingUuids: string[],
+    currentUserUuid: string,
+    options: { page: number; limit: number; prioritizeFollowed: boolean },
+  ): Promise<PaginatedResult<PostOrmEntity>> {
+    const { page, limit } = options;
+    const skip = (page - 1) * limit;
+
+    // Query builder để có thể sử dụng UNION và ORDER BY phức tạp
+    const queryBuilder = this.postRepository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('post.user', 'user')
+      .where('post.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('post.isHidden = :isHidden', { isHidden: false });
+
+    if (followingUuids.length > 0) {
+      // Tạo case statement để ưu tiên:
+      // 0 - Bài viết của người được follow (ưu tiên cao nhất)
+      // 1 - Bài viết của người khác
+      // 2 - Bài viết của chính user (ưu tiên thấp nhất)
+      queryBuilder
+        .addSelect(
+          `CASE 
+            WHEN post.userUuid IN (:...followingUuids) THEN 0 
+            WHEN post.userUuid = :currentUserUuid THEN 2 
+            ELSE 1 
+          END`,
+          'priority',
+        )
+        .setParameter('followingUuids', followingUuids)
+        .setParameter('currentUserUuid', currentUserUuid)
+        .orderBy('priority', 'ASC')
+        .addOrderBy('post.createdAt', 'DESC');
+    } else {
+      queryBuilder
+        .addSelect(
+          `CASE 
+            WHEN post.userUuid = :currentUserUuid THEN 1 
+            ELSE 0 
+          END`,
+          'priority',
+        )
+        .setParameter('currentUserUuid', currentUserUuid)
+        .orderBy('priority', 'ASC')
+        .addOrderBy('post.createdAt', 'DESC');
+    }
+
+    // Áp dụng phân trang
+    queryBuilder.skip(skip).take(limit);
+
+    const [posts, total] = await queryBuilder.getManyAndCount();
+
+    const lastPage = Math.ceil(total / limit);
+    return {
+      data: posts,
+      meta: {
+        total,
+        page,
+        lastPage,
+      },
+    };
   }
 }

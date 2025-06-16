@@ -16,8 +16,17 @@ import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
 import { GetPostByUuidUseCase } from '@/modules/posts/application/use-cases/get-post-by-uuid.use-case';
 import { CommentModule } from '@/modules/comment/comment.module';
 import { ReactionsModule } from '@/modules/reactions/reactions.module';
+import { GetHomeFeedUseCase } from '@/modules/posts/application/use-cases/get-home-feed.use-case';
+import { FollowModule } from '@/modules/follow/follow.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([PostOrmEntity]), StorageModule, UsersModule, CommentModule, ReactionsModule],
+  imports: [
+    TypeOrmModule.forFeature([PostOrmEntity]),
+    StorageModule,
+    UsersModule,
+    CommentModule,
+    FollowModule,
+    ReactionsModule,
+  ],
   controllers: [PostsController],
   providers: [
     PostRepository,
@@ -30,6 +39,7 @@ import { ReactionsModule } from '@/modules/reactions/reactions.module';
     PostMapper,
     UserMapper,
     GetPostByUuidUseCase,
+    GetHomeFeedUseCase,
     {
       provide: 'IPostRepository',
       useExisting: PostRepository,

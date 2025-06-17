@@ -28,7 +28,7 @@ interface MessageDto {
     // Temporarily allow all origins for debugging
     origin: true,
   },
-  namespace: 'chat',
+  namespace: 'socket',
 })
 export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
@@ -61,6 +61,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   handleAuthenticate(client: Socket, userUuid: string) {
     this.logger.log(`User ${userUuid} authenticated on socket ${client.id}`);
     this.userSocketMap.set(userUuid, client.id);
+    client.emit('authenticate', { status: 'authenticated', userUuid });
     return { status: 'authenticated' };
   }
 
@@ -109,15 +110,41 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
     });
   }
 
+  @SubscribeMessage('joinNotifications')
+  handleJoinNotifications(client: Socket, userUuid: string) {
+    client.join(`notifications_${userUuid}`);
+    this.logger.log(`Client ${client.id} joined notifications for user: ${userUuid}`);
+    client.emit('joinNotifications', { status: 'joined_notifications', userUuid });
+    return { status: 'joined_notifications', userUuid };
+  }
+
+  @SubscribeMessage('leaveNotifications')
+  handleLeaveNotifications(client: Socket, userUuid: string) {
+    client.leave(`notifications_${userUuid}`);
+    this.logger.log(`Client ${client.id} left notifications for user: ${userUuid}`);
+    client.emit('leaveNotifications', { status: 'left_notifications', userUuid });
+    return { status: 'left_notifications', userUuid };
+  }
+
   // Method to be called from other services
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sendToUser(userId: string, event: string, data: any) {
     const socketId = this.userSocketMap.get(userId);
     if (socketId) {
       this.server.to(socketId).emit(event, data);
+      this.logger.log(`Sent ${event} to user ${userId} via socket ${socketId}`);
       return true;
     }
+    // Fallback: send to notification room if direct socket not found
+    this.server.to(`notifications_${userId}`).emit(event, data);
+    this.logger.log(`Sent ${event} to user ${userId} via notification room`);
     return false;
+  }
+
+  // Method to send notification to specific user
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sendNotificationToUser(userId: string, notification: any) {
+    this.sendToUser(userId, 'newNotification', notification);
   }
 
   // Method to be called from other services

@@ -6,10 +6,14 @@ export class UpdateConversationUseCase {
   constructor(private readonly conversationRepository: ConversationRepository) {}
 
   async execute(updateConversationDto: UpdateConversationDto): Promise<void> {
-    const conversation = await this.conversationRepository.findByUuid(updateConversationDto.conversationUuid);
+    await this.conversationRepository.findByUuid(updateConversationDto.conversationUuid);
+
     if (updateConversationDto.conversationGroupPictureUrl) {
-      conversation.groupPictureUrl = updateConversationDto.conversationGroupPictureUrl;
+      await this.conversationRepository.updateField(
+        updateConversationDto.conversationUuid,
+        'groupPictureUrl',
+        updateConversationDto.conversationGroupPictureUrl,
+      );
     }
-    await this.conversationRepository.update(updateConversationDto.conversationUuid, conversation);
   }
 }

@@ -99,7 +99,7 @@ export class ConversationRepository
     const [conversations, total] = await this.conversationRepository.findAndCount({
       skip,
       take: limit,
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' },
     });
     const lastPage = Math.ceil(total / limit);
     return {
@@ -129,11 +129,20 @@ export class ConversationRepository
 
   async update(uuid: string, entity: ConversationOrmEntity): Promise<ConversationOrmEntity> {
     await this.findByUuid(uuid);
-    await this.conversationRepository.update({ uuid }, entity);
+
+    const updateData: Partial<ConversationOrmEntity> = {};
+
+    if (entity.title !== undefined) updateData.title = entity.title;
+    if (entity.isGroupChat !== undefined) updateData.isGroupChat = entity.isGroupChat;
+    if (entity.groupPictureUrl !== undefined) updateData.groupPictureUrl = entity.groupPictureUrl;
+    if (entity.adminUuid !== undefined) updateData.adminUuid = entity.adminUuid;
+    if (entity.updatedAt !== undefined) updateData.updatedAt = entity.updatedAt;
+
+    await this.conversationRepository.update({ uuid }, updateData);
     return this.findByUuid(uuid);
   }
 
-  async updateField(uuid: string, field: string, value: any): Promise<void> {
+  async updateField(uuid: string, field: string, value: unknown): Promise<void> {
     await this.conversationRepository.update({ uuid }, { [field]: value });
   }
 

@@ -46,9 +46,9 @@ export class UserConversationRepository
 
     let orderBy: FindOptionsOrder<UserConversation>;
     if (sortBy && sortBy != '') {
-      orderBy = { [sortBy]: sortDirection as unknown as SortDirection };
+      orderBy = { [sortBy]: sortDirection as unknown as SortDirection, createdAt: 'ASC' };
     } else {
-      orderBy = { createdAt: 'DESC' }; // Using createdAt as updatedAt doesn't exist in the entity
+      orderBy = { createdAt: 'ASC' };
     }
 
     const skip = (page - 1) * limit;

@@ -169,7 +169,6 @@ export class PostsController {
     @GetUser() currentUser: { uuid: string },
     @Query() searchDto: SearchDto,
   ): Promise<ApiSuccessResponse<PaginatedResult<PostResponseDto>>> {
-    console.log('abcdef', currentUser);
     const { page, limit } = searchDto;
     const posts = await this.getHomeFeedUseCase.execute(currentUser.uuid, {
       page,

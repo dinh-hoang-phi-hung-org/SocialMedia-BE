@@ -13,8 +13,13 @@ import { UserMapper } from '@/modules/users/application/mapper/user.mapper';
 import { AdjustUserFollowerCountUseCase } from '@/modules/follow/application/use-cases/adjust-user-follower-count.use-case';
 import { AdjustUserFollowingCountUseCase } from '@/modules/follow/application/use-cases/adjust-user-following-count.use-case';
 import { UsersModule } from '@/modules/users/users.module';
+import { NotificationModule } from '@/modules/notification/notification.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([FollowOrmEntity, UserOrmEntity]), forwardRef(() => UsersModule)],
+  imports: [
+    TypeOrmModule.forFeature([FollowOrmEntity, UserOrmEntity]),
+    forwardRef(() => UsersModule),
+    NotificationModule,
+  ],
   controllers: [FollowController],
   providers: [
     FollowUserUseCase,

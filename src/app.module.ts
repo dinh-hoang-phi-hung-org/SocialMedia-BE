@@ -16,6 +16,7 @@ import { CommentModule } from './modules/comment/comment.module';
 import { ReportModule } from './modules/report/report.module';
 import { ReactionsModule } from './modules/reactions/reactions.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { NotificationModule } from './modules/notification/notification.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     ReportModule,
     ReactionsModule,
     AnalyticsModule,
+    NotificationModule,
   ],
 })
 export class AppModule implements OnModuleInit {

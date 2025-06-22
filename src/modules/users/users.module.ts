@@ -11,8 +11,10 @@ import { FollowModule } from '@/modules/follow/follow.module';
 import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.entity.orm';
 import { GetMeUseCase } from './application/use-cases/get-me.use-case';
 import { GetUserWithoutMeUseCase } from './application/use-cases/get-user-without-me.use-case';
+import { EditUserUseCase } from './application/use-cases/edit-user.use-case';
+import { StorageModule } from '@/modules/storage/storage.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([UserOrmEntity, FollowOrmEntity]), forwardRef(() => FollowModule)],
+  imports: [TypeOrmModule.forFeature([UserOrmEntity, FollowOrmEntity]), forwardRef(() => FollowModule), StorageModule],
   controllers: [UsersController],
   providers: [
     UserMapper,
@@ -21,6 +23,7 @@ import { GetUserWithoutMeUseCase } from './application/use-cases/get-user-withou
     GetMeUseCase,
     UserRepository,
     GetUserWithoutMeUseCase,
+    EditUserUseCase,
     JwtAuthGuard,
     {
       provide: 'IUserRepository',

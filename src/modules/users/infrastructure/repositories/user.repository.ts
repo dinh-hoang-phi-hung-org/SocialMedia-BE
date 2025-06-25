@@ -153,13 +153,13 @@ export class UserRepository extends AbstractRepository<UserOrmEntity> implements
   }
 
   async update(uuid: string, entity: Partial<UserOrmEntity>): Promise<UserOrmEntity> {
-    await this.findByUuid(uuid); // Verify user exists
+    await this.findByUuid(uuid);
     await this.userRepository.update({ uuid }, entity);
     return await this.findByUuid(uuid);
   }
 
   async delete(uuid: string): Promise<void> {
-    await this.findByUuid(uuid); // Verify user exists
+    await this.findByUuid(uuid);
     await this.userRepository.delete({ uuid });
   }
 }

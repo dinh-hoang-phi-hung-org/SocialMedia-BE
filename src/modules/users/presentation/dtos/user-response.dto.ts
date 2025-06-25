@@ -20,3 +20,15 @@ export class UserResponseDto {
   postsCount: number;
   isFollowed?: boolean;
 }
+
+export class EditUserDto {
+  uuid: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  profilePictureUrl: string;
+  bio: string;
+  gender: Gender;
+  dateOfBirth: Date;
+}

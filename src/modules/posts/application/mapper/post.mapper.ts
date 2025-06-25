@@ -20,6 +20,7 @@ export class PostMapper {
       commentsCount: (post as any).commentsCount || (post as any).comments?.length || 0,
       reactionsCount: (post as any).reactionsCount || (post as any).reactions?.length || 0,
       isReacted: (post as any).isReacted || false,
+      isSaved: (post as any).isSaved || false,
     };
   }
 

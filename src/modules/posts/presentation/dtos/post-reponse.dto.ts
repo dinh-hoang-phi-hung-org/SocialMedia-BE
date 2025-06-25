@@ -13,4 +13,5 @@ export class PostResponseDto {
   commentsCount: number;
   reactionsCount: number;
   isReacted: boolean;
+  isSaved: boolean;
 }

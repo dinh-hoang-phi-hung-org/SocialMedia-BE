@@ -18,9 +18,15 @@ import { CommentModule } from '@/modules/comment/comment.module';
 import { ReactionsModule } from '@/modules/reactions/reactions.module';
 import { GetHomeFeedUseCase } from '@/modules/posts/application/use-cases/get-home-feed.use-case';
 import { FollowModule } from '@/modules/follow/follow.module';
+import { SavePostOrmEntity } from '@/modules/posts/infrastructure/orm/save-posts.entity.orm';
+import { SavePostRepository } from '@/modules/posts/infrastructure/repositories/save-post.repository';
+import { SavePostUseCase } from '@/modules/posts/application/use-cases/save-post.use-case';
+import { DeleteSavePostUseCase } from '@/modules/posts/application/use-cases/delete-save-post.use-case';
+import { CheckSavePostUseCase } from '@/modules/posts/application/use-cases/check-save-post.use-case';
+import { GetSavedPostsUseCase } from '@/modules/posts/application/use-cases/get-saved-posts.use-case';
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PostOrmEntity]),
+    TypeOrmModule.forFeature([PostOrmEntity, SavePostOrmEntity]),
     StorageModule,
     UsersModule,
     CommentModule,
@@ -30,6 +36,7 @@ import { FollowModule } from '@/modules/follow/follow.module';
   controllers: [PostsController],
   providers: [
     PostRepository,
+    SavePostRepository,
     JwtAuthGuard,
     CreatePostUseCase,
     UpdatePostUseCase,
@@ -40,9 +47,17 @@ import { FollowModule } from '@/modules/follow/follow.module';
     UserMapper,
     GetPostByUuidUseCase,
     GetHomeFeedUseCase,
+    SavePostUseCase,
+    DeleteSavePostUseCase,
+    CheckSavePostUseCase,
+    GetSavedPostsUseCase,
     {
       provide: 'IPostRepository',
       useExisting: PostRepository,
+    },
+    {
+      provide: 'ISavePostRepository',
+      useExisting: SavePostRepository,
     },
   ],
 })

@@ -40,6 +40,10 @@ import { CommentRepository } from '@/modules/comment/infrastructure/repositories
 import { ReactionRepository } from '@/modules/reactions/infrastructure/repository/reaction.repository';
 import { GetHomeFeedUseCase } from '@/modules/posts/application/use-cases/get-home-feed.use-case';
 import { SortDirection } from '@/shared/enum/sort-direction';
+import { SavePostUseCase } from '@/modules/posts/application/use-cases/save-post.use-case';
+import { DeleteSavePostUseCase } from '@/modules/posts/application/use-cases/delete-save-post.use-case';
+import { CheckSavePostUseCase } from '../../application/use-cases/check-save-post.use-case';
+import { GetSavedPostsUseCase } from '@/modules/posts/application/use-cases/get-saved-posts.use-case';
 @ApiTags('Posts')
 @Controller('posts')
 export class PostsController {
@@ -58,6 +62,10 @@ export class PostsController {
     private readonly commentRepository: CommentRepository,
     private readonly reactionRepository: ReactionRepository,
     private readonly getHomeFeedUseCase: GetHomeFeedUseCase,
+    private readonly savePostUseCase: SavePostUseCase,
+    private readonly deleteSavePostUseCase: DeleteSavePostUseCase,
+    private readonly checkSavePostUseCase: CheckSavePostUseCase,
+    private readonly getSavedPostsUseCase: GetSavedPostsUseCase,
   ) {}
 
   @Post()
@@ -157,6 +165,41 @@ export class PostsController {
     });
   }
 
+  @Get('/saved')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  async getSavedPosts(
+    @GetUser() currentUser: { uuid: string },
+    @Query() searchDto: SearchDto,
+  ): Promise<ApiSuccessResponse<PaginatedResult<PostResponseDto>>> {
+    const { page, limit } = searchDto;
+    const posts = await this.getSavedPostsUseCase.execute(currentUser.uuid, {
+      page,
+      limit,
+      searchFields: [],
+      searchValue: '',
+      sortBy: 'createdAt',
+      sortDirection: SortDirection.DESC,
+    });
+    const postsWithCommentsCount = await Promise.all(
+      posts.data.map(async (savedPost) => {
+        const post = savedPost.post;
+        const comments = await this.commentRepository.findByField('postUuid', post.uuid);
+        const commentsCount = comments ? comments.length : 0;
+        const reactions = await this.reactionRepository.findByField('postUuid', post.uuid);
+        const reactionsCount = reactions ? reactions.length : 0;
+        const isReacted = await this.reactionRepository.checkIsReacted(post.uuid, currentUser.uuid, 'post');
+        const isSaved = await this.checkSavePostUseCase.execute(post.uuid, currentUser.uuid);
+        return { ...post, commentsCount, reactionsCount, isReacted, isSaved };
+      }),
+    );
+    const updatedResult = {
+      ...posts,
+      data: postsWithCommentsCount,
+    };
+    return new ApiSuccessResponse(this.postMapper.toPaginatedDTO(updatedResult));
+  }
+
   @Get('/home')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth('access-token')
@@ -186,7 +229,8 @@ export class PostsController {
         const reactions = await this.reactionRepository.findByField('postUuid', post.uuid);
         const reactionsCount = reactions ? reactions.length : 0;
         const isReacted = await this.reactionRepository.checkIsReacted(post.uuid, currentUser.uuid, 'post');
-        return { ...post, commentsCount, reactionsCount, isReacted };
+        const isSaved = await this.checkSavePostUseCase.execute(post.uuid, currentUser.uuid);
+        return { ...post, commentsCount, reactionsCount, isReacted, isSaved };
       }),
     );
 
@@ -214,8 +258,9 @@ export class PostsController {
     const reactions = await this.reactionRepository.findByField('postUuid', post.uuid);
     const reactionsCount = reactions ? reactions.length : 0;
     const isReacted = await this.reactionRepository.checkIsReacted(post.uuid, currentUser.uuid, 'post');
+    const isSaved = await this.checkSavePostUseCase.execute(post.uuid, currentUser.uuid);
 
-    const postWithCommentsCountAndReactions = { ...post, commentsCount, reactionsCount, isReacted };
+    const postWithCommentsCountAndReactions = { ...post, commentsCount, reactionsCount, isReacted, isSaved };
     return new ApiSuccessResponse(this.postMapper.toDTO(postWithCommentsCountAndReactions));
   }
 
@@ -260,11 +305,13 @@ export class PostsController {
         const commentsCount = await this.commentRepository.findByField('postUuid', post.uuid);
         const reactionsCount = await this.reactionRepository.findByField('postUuid', post.uuid);
         const isReacted = await this.reactionRepository.checkIsReacted(post.uuid, currentUser.uuid, 'post');
+        const isSaved = await this.checkSavePostUseCase.execute(post.uuid, currentUser.uuid);
         return {
           ...post,
           commentsCount: commentsCount.length || 0,
           reactionsCount: reactionsCount.length || 0,
           isReacted,
+          isSaved,
         };
       }),
     );
@@ -275,5 +322,27 @@ export class PostsController {
     };
 
     return new ApiSuccessResponse(this.postMapper.toPaginatedDTO(updatedResult));
+  }
+
+  @Post('/save/:uuid')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  async savePost(
+    @Param('uuid') uuid: string,
+    @GetUser() user: { uuid: string },
+  ): Promise<ApiSuccessResponse<{ message: string }>> {
+    await this.savePostUseCase.execute(uuid, user.uuid);
+    return new ApiSuccessResponse({ message: 'Post saved successfully' });
+  }
+
+  @Delete('/save/:uuid')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  async unsavePost(
+    @Param('uuid') uuid: string,
+    @GetUser() user: { uuid: string },
+  ): Promise<ApiSuccessResponse<{ message: string }>> {
+    await this.deleteSavePostUseCase.execute(uuid, user.uuid);
+    return new ApiSuccessResponse({ message: 'Post unsaved successfully' });
   }
 }

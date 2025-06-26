@@ -228,4 +228,54 @@ export class ConversationRepository
 
     return userConversations.map((uc) => uc.conversation);
   }
+
+  async getUserConversationsWithPagination(
+    userId: string,
+    query: SearchOptions,
+  ): Promise<PaginatedResult<ConversationOrmEntity>> {
+    const { searchFields, searchValue, page, limit, sortBy, sortDirection } = query;
+
+    const queryBuilder = this.userConversationRepository
+      .createQueryBuilder('uc')
+      .innerJoinAndSelect('uc.conversation', 'conversation')
+      .leftJoinAndSelect('conversation.participants', 'participants')
+      .leftJoinAndSelect('participants.user', 'user')
+      .where('uc.user_uuid = :userId', { userId });
+
+    // Handle search if provided
+    if (searchFields && searchFields.length > 0 && searchValue) {
+      if (searchFields.includes('all') || searchFields.includes('title')) {
+        queryBuilder.andWhere('conversation.title LIKE :searchValue', { searchValue: `%${searchValue}%` });
+      }
+    }
+
+    // Handle sorting
+    if (sortBy && sortBy !== '') {
+      if (sortBy === 'updatedAt' || sortBy === 'createdAt') {
+        queryBuilder.orderBy(`conversation.${sortBy}`, sortDirection === 'ASC' ? 'ASC' : 'DESC');
+      } else {
+        queryBuilder.orderBy(`uc.${sortBy}`, sortDirection === 'ASC' ? 'ASC' : 'DESC');
+      }
+    } else {
+      queryBuilder.orderBy('conversation.updatedAt', 'DESC');
+    }
+
+    // Apply pagination
+    const skip = (page - 1) * limit;
+    queryBuilder.skip(skip).take(limit);
+
+    const [userConversations, total] = await queryBuilder.getManyAndCount();
+    const lastPage = Math.ceil(total / limit);
+
+    const conversations = userConversations.map((uc) => uc.conversation);
+
+    return {
+      data: conversations,
+      meta: {
+        total,
+        page,
+        lastPage,
+      },
+    };
+  }
 }

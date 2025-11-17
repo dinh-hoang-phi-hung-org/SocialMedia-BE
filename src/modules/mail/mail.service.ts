@@ -11,7 +11,7 @@ export class MailService {
   ) {}
 
   async sendUserConfirmation(user: UserOrmEntity, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('FRONTEND_URL');
+    const frontendUrl = this.configService.get('FRONTEND_DOMAIN');
     const confirmationUrl = `${frontendUrl}/auth/confirm?token=${token}`;
 
     await this.mailerService.sendMail({

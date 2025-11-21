@@ -25,4 +25,6 @@ jobs:
         with:
           context: .
           push: true
-        tags: dinhoangphihung17/socialmedia:latest
+          tags: |
+            dinhoangphihung17/socialmedia:latest
+            dinhoangphihung17/socialmedia:${{ github.sha }}

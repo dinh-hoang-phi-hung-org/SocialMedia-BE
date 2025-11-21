@@ -3,9 +3,7 @@ version: '3.8'
 services:
   # Ứng dụng NestJS
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: dinhoangphihung17/socialmedia:latest
     container_name: nestjs-app
     restart: unless-stopped
     ports:

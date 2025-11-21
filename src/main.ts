@@ -40,6 +40,14 @@ async function bootstrap() {
       preflightContinue: false,
     });
 
+    app.use('/api/health', (req, res) => {
+      res.status(200).json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+      });
+    });
+
     app
       .enableShutdownHooks()
       .useGlobalPipes(new ValidationPipe())

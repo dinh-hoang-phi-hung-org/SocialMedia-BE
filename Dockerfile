@@ -23,22 +23,12 @@ WORKDIR /app
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init wget
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001
-
 # Install only production dependencies
 COPY package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application from builder stage
-COPY --from=builder --chown=nestjs:nodejs /app/dist ./dist
-
-# Change ownership to nestjs user
-RUN chown -R nestjs:nodejs /app
-
-# Switch to non-root user
-USER nestjs
+COPY --from=builder /app/dist ./dist
 
 # Expose port
 EXPOSE 3001

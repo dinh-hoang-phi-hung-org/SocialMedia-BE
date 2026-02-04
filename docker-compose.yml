@@ -10,10 +10,10 @@ services:
     restart: unless-stopped
     ports:
       - '3001:3001'
-    environment:
-      - NODE_ENV=production
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
+    # environment:
+    #   - NODE_ENV=production
+    #   - REDIS_HOST=redis
+    #   - REDIS_PORT=6379
     env_file:
       - .env
     depends_on:
@@ -21,13 +21,12 @@ services:
         condition: service_started
     networks:
       - app-network
-    volumes:
-      - ./uploads:/app/uploads # Nếu có file uploads
+    # volumes:
+    #   - ./uploads:/app/uploads # Nếu có file uploads
 
   # Redis Cache
   redis:
     image: redis:latest
-    container_name: my-redis
     restart: unless-stopped
     ports:
       - '6379:6379'
@@ -57,8 +56,31 @@ services:
     networks:
       - app-network
 
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    ports:
+      - '3307:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
 volumes:
   redis_data:
+    driver: local
+  mysql_data:
     driver: local
 
 networks:

@@ -67,6 +67,9 @@ jobs:
             echo "Current containers:"
             docker compose -f docker-compose.yml ps
 
+            echo "Migrating database..."
+            docker exec -it nestjs-app npm run migration:run
+
             echo "Deployment completed!"
 
       - name: Notify deployment status

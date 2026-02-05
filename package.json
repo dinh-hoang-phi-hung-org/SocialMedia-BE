@@ -7,7 +7,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "build:prod": "nest build -p tsconfig.build.json",
+    "build:prod": "npx nest build -p tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -24,8 +24,8 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:create": "npm run typeorm migration:create ./src/shared/infrastructure/database/migrations/$npm_config_name",
     "migration:generate": "npm run typeorm -- migration:generate -d ./typeorm.config.ts ./src/shared/infrastructure/database/migrations/$npm_config_name",
-    "migration:run": "npm run typeorm -- migration:run -d typeorm.config.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d typeorm.config.ts",
+    "migration:run": "npm run typeorm -- migration:run -d dist/typeorm.config.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d dist/typeorm.config.ts",
     "seed:run": "ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:run -d ./dist/shared/infrastructure/database/database.config.js",
     "seed:create": "ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:create -r src/shared/infrastructure/database/seeds --name=$npm_config_name"
   },

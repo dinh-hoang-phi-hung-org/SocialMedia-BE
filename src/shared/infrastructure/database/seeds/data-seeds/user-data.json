@@ -1,0 +1,13 @@
+[
+  {
+    "uuid": "68bfb822-5ca2-4d56-91b5-f3b43084af56",
+    "username": "admin1",
+    "email": "admin@example.com",
+    "password": "admin",
+    "phoneNumber": "01234567890",
+    "firstName": "Admin",
+    "lastName": "Admin",
+    "isActive": true,
+    "role": "admin"
+  }
+]

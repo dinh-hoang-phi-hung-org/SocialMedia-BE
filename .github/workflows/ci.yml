@@ -70,6 +70,9 @@ jobs:
             echo "Migrating database..."
             docker exec -it nestjs-app npm run migration:run
 
+            echo "Seeding database..."
+            docker exec -it nestjs-app npm run seed:run
+
             echo "Deployment completed!"
 
       - name: Notify deployment status

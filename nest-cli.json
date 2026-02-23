@@ -3,6 +3,13 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "assets": [
+      {
+        "include": "src/shared/infrastructure/database/seeds/data-seeds/*.json",
+        "outDir": "dist/shared/infrastructure/database/seeds/data-seeds",
+        "watchAssets": true
+      }
+    ]
   }
 }

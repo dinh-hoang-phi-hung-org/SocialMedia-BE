@@ -68,10 +68,10 @@ jobs:
             docker compose -f docker-compose.yml ps
 
             echo "Migrating database..."
-            docker exec -it nestjs-app npm run migration:run
+            docker exec nestjs-app npm run migration:run
 
             echo "Seeding database..."
-            docker exec -it nestjs-app npm run seed:run
+            docker exec nestjs-app npm run seed:run
 
             echo "Deployment completed!"
 

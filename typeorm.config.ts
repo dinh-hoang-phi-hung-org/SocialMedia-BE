@@ -4,11 +4,6 @@ import { join } from 'path';
 import * as dotenv from 'dotenv';
 import { register } from 'tsconfig-paths';
 import type { SeederOptions } from 'typeorm-extension';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 register({
   baseUrl: './src',
@@ -26,13 +21,13 @@ const option: DataSourceOptions & SeederOptions = {
   username: process.env.MYSQL_USER,
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
-  entities: [join(__dirname, 'dist', '**', '*.entity.orm.{ts,js}')],
-  migrations: [join(__dirname, 'dist', 'shared', 'infrastructure', 'database', 'migrations', '*.{ts,js}')],
+  entities: [join('dist', '**', '*.entity.orm.js')],
+  migrations: [join('dist', 'shared', 'infrastructure', 'database', 'migrations', '*.js')],
   migrationsTableName: 'migrations',
   synchronize: false,
   logging: true,
   seedTracking: true,
-  seeds: [join('dist/shared/infrastructure/database/seeds/*.{ts,js}')],
+  seeds: [join('dist', 'shared', 'infrastructure', 'database', 'seeds', '*.js')],
 };
 
-export const AppDataSource = new DataSource(option);
+export default new DataSource(option);

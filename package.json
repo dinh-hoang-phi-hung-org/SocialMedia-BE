@@ -26,7 +26,7 @@
     "migration:generate": "npm run typeorm -- migration:generate -d ./typeorm.config.ts ./src/shared/infrastructure/database/migrations/$npm_config_name",
     "migration:run": "npm run typeorm -- migration:run -d dist/typeorm.config.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d dist/typeorm.config.ts",
-    "seed:run": "ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:run -d dist/typeorm.config.ts",
+    "seed:run": "node ./node_modules/typeorm-extension/bin/cli.cjs seed:run -d dist/typeorm.config.js",
     "seed:create": "ts-node ./node_modules/typeorm-extension/bin/cli.cjs seed:create -r dist/shared/infrastructure/database/seeds --name=$npm_config_name"
   },
   "dependencies": {

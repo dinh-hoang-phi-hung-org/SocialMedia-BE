@@ -21,10 +21,10 @@ async function bootstrap() {
 
     app.useWebSocketAdapter(new IoAdapter(app));
 
-    // const frontendDomain = configService.get('app.frontendDomain', { infer: true }) || 'http://localhost:3000';
+    const frontendDomain = configService.get('app.frontendDomain', { infer: true }) || 'http://localhost:3000';
 
     app.enableCors({
-      origin: true, // Temporarily allow all origins for debugging
+      origin: frontendDomain,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: [

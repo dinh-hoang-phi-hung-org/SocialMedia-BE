@@ -9,7 +9,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build:prod
+RUN npm run build
 
 
 # ===== PRODUCTION STAGE =====
@@ -17,26 +17,18 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache dumb-init wget
+RUN apk add --no-cache dumb-init
 
 COPY package*.json ./
 
+# chỉ install production deps
 RUN npm ci --omit=dev
 
-COPY --from=builder /app/node_modules/ts-node ./node_modules/ts-node
-COPY --from=builder /app/node_modules/typescript ./node_modules/typescript
-COPY --from=builder /app/node_modules/tsconfig-paths ./node_modules/tsconfig-paths
-COPY --from=builder /app/node_modules/json5 ./node_modules/json5
-
-# Runtime build
+# copy build output
 COPY --from=builder /app/dist ./dist
-
-# Copy config + migrations
-COPY typeorm.config.ts ./dist/typeorm.config.ts
-COPY tsconfig.json ./tsconfig.json
-COPY src/shared/infrastructure/database/migrations ./src/shared/infrastructure/database/migrations
 
 EXPOSE 3001
 
 ENTRYPOINT ["dumb-init", "--"]
+
 CMD ["node", "dist/main.js"]

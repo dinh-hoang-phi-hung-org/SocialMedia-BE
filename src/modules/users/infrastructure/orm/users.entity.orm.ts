@@ -6,6 +6,7 @@ import { FollowOrmEntity } from '@/modules/follow/infrastructure/orm/follow.enti
 import { PostOrmEntity } from '@/modules/posts/infrastructure/orm/posts.entity.orm';
 import { UserConversation } from '@/modules/message/infrastructure/orm/user-conversation.entity.orm';
 import { MessageOrmEntity } from '@/modules/message/infrastructure/orm/message.entity.orm';
+import { AuthProviderOrmEntity } from '@/modules/auth/infrastructure/orm/auth-provider.entity.orm';
 
 @Entity('users')
 export class UserOrmEntity extends BaseOrmEntity {
@@ -15,7 +16,7 @@ export class UserOrmEntity extends BaseOrmEntity {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   password_hash: string;
 
   @Column({ nullable: true })
@@ -70,4 +71,13 @@ export class UserOrmEntity extends BaseOrmEntity {
 
   @OneToMany(() => MessageOrmEntity, (message) => message.sender)
   messages: MessageOrmEntity[];
+
+  @Column({ nullable: true, unique: true })
+  google_id: string;
+
+  @Column({ default: false })
+  is_google_account: boolean;
+
+  @OneToMany(() => AuthProviderOrmEntity, (provider) => provider.user)
+  authProviders: AuthProviderOrmEntity[];
 }

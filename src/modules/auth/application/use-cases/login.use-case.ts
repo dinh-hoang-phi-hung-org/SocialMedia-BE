@@ -7,6 +7,7 @@ import { GetTokenHelper } from '@/modules/auth/presentation/helper/get-token-dat
 import { UserOrmEntity } from '@/modules/users/infrastructure/orm/users.entity.orm';
 import { LoginResponseDto } from '@/modules/auth/presentation/dtos/login-response.dto';
 import { comparePassword } from '@/shared/helpers/bcrypt';
+import { generateTokenResponse } from './generate-token';
 
 @Injectable()
 export class LoginUseCase {
@@ -33,26 +34,8 @@ export class LoginUseCase {
     user.last_login = new Date();
     await this.userRepository.update(user.uuid, { last_login: user.last_login });
 
-    const tokenResponse = await this.generateTokenResponse(user);
+    const tokenResponse = await generateTokenResponse(user, this.jwtService, this.configService);
 
     return tokenResponse;
-  }
-
-  private async generateTokenResponse(user: UserOrmEntity) {
-    const tokenData = await GetTokenHelper(
-      {
-        username: user.username,
-        uuid: user.uuid,
-        role: user.role,
-      },
-      this.jwtService,
-      this.configService,
-    );
-
-    return {
-      accessToken: tokenData.accessToken,
-      refreshToken: tokenData.refreshToken,
-      tokenExpires: tokenData.tokenExpires,
-    };
   }
 }

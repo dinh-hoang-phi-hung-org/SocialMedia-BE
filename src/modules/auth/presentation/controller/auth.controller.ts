@@ -10,6 +10,7 @@ import { JwtAuthGuard } from '@/shared/guards/jwt-auth.guard';
 import { GetUser } from '@/shared/decorators/get-user.decorator';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { LoginResponseDto } from '@/modules/auth/presentation/dtos/login-response.dto';
+import { LoginByGoogleUseCase } from '../../application/use-cases/login-by-google.use-case';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -18,6 +19,7 @@ export class AuthController {
     private readonly signupUseCase: SignupUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly logoutUseCase: LogoutUseCase,
+    private readonly loginByGoogleUseCase: LoginByGoogleUseCase,
   ) {}
 
   @Post('login')
@@ -55,5 +57,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user' })
   async logout(@GetUser('token') token: string): Promise<ApiSuccessResponse<{ message: string }>> {
     return this.logoutUseCase.execute(token);
+  }
+
+  @Post('google')
+  async googleLogin(@Body('code') code: string): Promise<ApiSuccessResponse<LoginResponseDto>> {
+    return this.loginByGoogleUseCase.execute(code);
   }
 }

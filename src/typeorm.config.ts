@@ -22,7 +22,7 @@ const option: DataSourceOptions & SeederOptions = {
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
   entities: [join('dist', '**', '*.entity.orm.js')],
-  migrations: [join('dist', 'shared', 'infrastructure', 'database', 'migrations', '*.js')],
+  migrations: [join('dist', 'shared', 'infrastructure', 'database', 'migrations', '*.{js,ts}')],
   migrationsTableName: 'migrations',
   synchronize: false,
   logging: true,

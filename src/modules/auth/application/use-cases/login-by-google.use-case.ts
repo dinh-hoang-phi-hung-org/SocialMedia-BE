@@ -25,11 +25,12 @@ export class LoginByGoogleUseCase {
   async execute(code: string): Promise<ApiSuccessResponse<LoginResponseDto>> {
     try {
       const tokenData = await this.getGoogleToken(code);
+      console.log(tokenData);
 
       const googleUser = await this.getGoogleUserInfo(tokenData.access_token);
-
+      console.log(googleUser);
       const googleId = googleUser.sub;
-
+      console.log(googleId);
       const provider = await this.authProviderRepository.findByGoogleId(googleId);
 
       let user: UserOrmEntity;
@@ -89,7 +90,7 @@ export class LoginByGoogleUseCase {
 
   private async getGoogleUserInfo(accessToken: string) {
     const response = await firstValueFrom(
-      this.httpService.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      this.httpService.get('https://www.googleapis.com/oauth2/v3/userinfo', {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },

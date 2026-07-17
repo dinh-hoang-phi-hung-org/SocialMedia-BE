@@ -21,6 +21,15 @@ interface MessageDto {
   content: string;
 }
 
+interface CallSignalDto {
+  conversationUuid: string;
+  roomName: string;
+  callType: 'voice' | 'video';
+  callerUuid: string;
+  callerName?: string;
+  conversationTitle?: string;
+}
+
 @WebSocketGateway({
   cors: {
     credentials: true,
@@ -108,6 +117,49 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       isTyping: payload.isTyping,
       conversationId: payload.conversationId,
     });
+  }
+
+  @SubscribeMessage('call:start')
+  handleStartCall(client: Socket, payload: CallSignalDto) {
+    this.logger.log(`Call started in conversation: ${payload.conversationUuid}`);
+
+    client.to(payload.conversationUuid).emit('call:incoming', {
+      ...payload,
+      roomName: payload.roomName || payload.conversationUuid,
+      startedAt: new Date().toISOString(),
+    });
+
+    return { status: 'ringing', roomName: payload.roomName || payload.conversationUuid };
+  }
+
+  @SubscribeMessage('call:decline')
+  handleDeclineCall(
+    client: Socket,
+    payload: { conversationUuid: string; roomName: string; declinedByUuid: string; declinedByName?: string },
+  ) {
+    this.logger.log(`Call declined in conversation: ${payload.conversationUuid}`);
+
+    client.to(payload.conversationUuid).emit('call:declined', {
+      ...payload,
+      declinedAt: new Date().toISOString(),
+    });
+
+    return { status: 'declined', roomName: payload.roomName };
+  }
+
+  @SubscribeMessage('call:end')
+  handleEndCall(
+    client: Socket,
+    payload: { conversationUuid: string; roomName: string; endedByUuid: string; endedByName?: string },
+  ) {
+    this.logger.log(`Call ended in conversation: ${payload.conversationUuid}`);
+
+    client.to(payload.conversationUuid).emit('call:ended', {
+      ...payload,
+      endedAt: new Date().toISOString(),
+    });
+
+    return { status: 'ended', roomName: payload.roomName };
   }
 
   @SubscribeMessage('joinNotifications')

@@ -148,9 +148,10 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
   @SubscribeMessage('call:start')
   async handleStartCall(client: Socket, payload: CallSignalDto) {
     this.logger.log(`Call started in conversation: ${payload.conversationUuid}`);
-    const conversation = await this.conversationRepository.findOne({
-      where: { uuid: payload.conversationUuid },
-    });
+    const [conversation, caller] = await Promise.all([
+      this.conversationRepository.findOne({ where: { uuid: payload.conversationUuid } }),
+      this.userRepository.findOne({ where: { uuid: payload.callerUuid } }),
+    ]);
     const isGroupCall = Boolean(conversation?.isGroupChat);
     const startedAt = new Date();
     const callLog = await this.callLogRepository.save(
@@ -175,6 +176,7 @@ export class SocketGateway implements OnGatewayInit, OnGatewayConnection, OnGate
       callLogUuid: callLog.uuid,
       startedAt: startedAt.toISOString(),
       isGroupCall,
+      callerAvatarUrl: caller?.profile_picture_url || '',
     };
 
     client.to(payload.conversationUuid).emit('call:incoming', incomingCallPayload);
